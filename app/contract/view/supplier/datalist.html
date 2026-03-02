@@ -1,0 +1,121 @@
+{extend name="../../base/view/common/base" /}
+<!-- 主体 -->
+{block name="body"}
+<div class="p-page">
+	<form class="layui-form gg-form-bar border-x border-t" id="barsearchform">
+		<div class="layui-input-inline" style="width:240px;">
+			<input type="text" name="keywords" placeholder="供应商名称/联系人名称" class="layui-input" />
+		</div>
+		<div class="layui-input-inline" style="width:150px">
+			<button class="layui-btn layui-btn-normal" lay-submit="" lay-filter="table-search"><i class="layui-icon layui-icon-search mr-1"></i>搜索</button>
+			<button type="reset" class="layui-btn layui-btn-reset" lay-filter="table-reset">清空</button>
+		</div>
+	</form>
+    <table class="layui-hide" id="test" lay-filter="test"></table>
+</div>
+<script type="text/html" id="toolbarDemo">
+  <div class="layui-btn-container">
+  	<button class="layui-btn layui-btn-sm add-new" type="button">+ 添加供应商</button>
+  </div>
+</script>
+{/block}
+<!-- /主体 -->
+
+<!-- 脚本 -->
+{block name="script"}
+	<script>
+	const moduleInit = ['tool','tablePlus'];
+	function gouguInit() {
+		var table = layui.tablePlus, tool = layui.tool, form = layui.form;
+		layui.pageTable = table.render({
+			elem: '#test'
+			,toolbar: '#toolbarDemo'
+			,title:'供应商列表'
+			,url: "/contract/supplier/datalist"
+			,page: true
+			,cellMinWidth: 80
+			,cols: [[
+				{field:'id',width:80, title: 'ID号', align:'center'}
+				,{field:'title',title: '供应商名称',minWidth:300}
+				,{field:'address',width:280, title: '供应商地址'}
+				,{field:'phone',width:150, title: '供应商电话', align:'center'}
+				,{field:'email',width:150, title: '供应商邮箱', align:'center'}
+				,{field:'status', title: '状态',width:80,align:'center',templet: function(d){
+					var html1='<span class="green">正常</span>';
+					var html2='<span class="yellow">禁用</span>';
+					if(d.status==1){
+						return html1;
+					}
+					else{
+						return html2;
+					}
+				}}
+				,{width:150,fixed:'right', title: '操作',ignoreExport:true, align:'center',templet: function(d){
+					var html='';
+					var btn='<a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a><a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="view">详情</a>';
+					var btn1='<a class="layui-btn layui-btn-warm layui-btn-xs" lay-event="disable">禁用</a>';
+					var btn2='<a class="layui-btn layui-btn-xs" lay-event="open">启用</a>';
+					var btn3='<a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>';
+					if(d.status==1){
+						html = '<div class="layui-btn-group">'+btn+btn1+btn3+'</div>';
+					}
+					else{
+						html = '<div class="layui-btn-group">'+btn+btn2+btn3+'</div>';
+					}
+					return html;
+				}}
+			]]
+		});
+			
+		table.on('tool(test)',function (obj) {
+			if(obj.event === 'edit'){					
+				tool.side("/contract/supplier/add?id="+obj.data.id);
+			}
+			if(obj.event === 'view'){					
+				tool.side("/contract/supplier/view?id="+obj.data.id);
+			}
+			if(obj.event === 'disable'){
+				layer.confirm('确定要禁用该供应商吗?', {icon: 3, title:'提示'}, function(index){
+					let callback = function (e) {
+						layer.msg(e.msg);
+						if (e.code == 0) {
+							layui.pageTable.reload();
+						}
+					}
+					tool.post("/contract/supplier/set", { id: obj.data.id,status: 0,title: obj.data.title}, callback);
+					layer.close(index);
+				});
+			}
+			if(obj.event === 'open'){
+				layer.confirm('确定要启用该供应商吗?', {icon: 3, title:'提示'}, function(index){
+					let callback = function (e) {
+						layer.msg(e.msg);
+						if (e.code == 0) {
+							layui.pageTable.reload();
+						}
+					}
+					tool.post("/contract/supplier/set", { id: obj.data.id,status: 1,title: obj.data.title}, callback);
+					layer.close(index);
+				});
+			}
+			if(obj.event === 'del'){
+				layer.confirm('确定要删除该供应商吗?', {icon: 3, title:'提示'}, function(index){
+					let callback = function (e) {
+						layer.msg(e.msg);
+						if (e.code == 0) {
+							layui.pageTable.reload();
+						}
+					}
+					tool.delete("/contract/supplier/del", { id: obj.data.id}, callback);
+					layer.close(index);
+				});
+			}
+		});
+			
+		$('body').on('click','.add-new',function(){
+			tool.side("/contract/supplier/add");
+		});
+	}
+	</script>
+{/block}
+<!-- /脚本 -->

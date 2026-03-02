@@ -1,0 +1,68 @@
+<div class="layui-row layui-col-space16">
+	<div class="layui-col-md12">
+		<div class="layui-card">
+			<div class="layui-card-title">系统信息</div>
+			<div class="layui-card-body">
+				<table class="layui-table" lay-skin="" lay-size="sm">
+					{if condition="($install == true)"}
+					<tr>
+						<td colspan="4" style="color: #E94335; background-color:#f8f8f8">提醒：发现app目录下的install文件夹没删除，为了系统的安全,请手动去删除。</td>
+					</tr>
+					{/if}
+					<tr>
+						<td class="info-td">服务器系统</td>
+						<td>{:get_system_info('os')}</td>
+						<td class="info-td">PHP版本</td>
+						<td>{:get_system_info('php')}</td>
+					</tr>
+					<tr>
+						<td class="info-td">上传附件限制</td>
+						<td>{:get_system_config('system','upload_max_filesize')}M / {:get_system_info('upload_max_filesize')}</td>
+						<td class="info-td">执行时间限制</td>
+						<td>{:get_system_info('max_execution_time')}</td>
+					</tr>
+					{eq name=":get_system_config('system','qrcode')" value="2"}
+					<tr>
+						<td class="info-td">勾股OA</td>
+						<td colspan="3">{:CMS_VERSION}<a class="layui-badge layui-bg-blue" style="margin-left:8px"
+							href="https://blog.gougucms.com/home/book/detail/bid/3.html" target="_blank">勾股OA文档</a></td>
+					</tr>
+					<tr>
+						<td class="info-td">ThinkPHP版本</td>
+						<td colspan="3">{$TP_VERSION}<a class="layui-badge layui-bg-blue" style="margin-left:8px" href="https://doc.thinkphp.cn/v8_0/preface.html" target="_blank">TP8文档</a></td>
+					</tr>
+					<tr>
+						<td class="info-td">Layui版本</td>
+						<td colspan="3">{:LAYUI_VERSION}<a class="layui-badge layui-bg-blue" style="margin-left:8px" href="https://layui.dev/docs/2/" target="_blank">Layui文档</a></td>
+					</tr>
+					<tr>
+						<td class="info-td">合作联系</td>
+						<td colspan="3"><i class="iconfont icon-weixin green"></i>微信号：hdm588，业务合作、功能定制请备注</td>
+					</tr>
+					<tr>
+						<td class="info-td">QQ交流群</td>
+						<td colspan="3">搜Q群：24641076(满)，46924914(满)，295256660<br>或点击 <a href="http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=vb-Jdu0e-7iAAxbqGczDg1xFjxbdBsip&authKey=lwlNHAZiUOK2Rua5B14KhfwoYcvpQtHnlWMAJAbQRhfg3YQOUVIFEmfxpbhcCQw%2F&noverify=0&group_code=295256660" target="_blank" rel="nofollow"><img border="0" src="//pub.idqqimg.com/wpa/images/group.png" alt="gougucms交流群" title="点击链接加入群聊【勾股开源交流群】" style="vertical-align:middle"></a></td>
+					</tr>
+					<tr>
+						<td class="info-td">同系列开源软件</td>
+						<td colspan="3"><a class="layui-badge layui-bg-blue" style="margin-right:8px" href="https://gitee.com/gouguopen/gougucms" target="_blank">勾股CMS</a><a class="layui-badge layui-bg-blue" style="margin-right:8px" href="https://gitee.com/gouguopen/blog" target="_blank">勾股BLOG</a><a class="layui-badge layui-bg-blue" href="https://gitee.com/gouguopen/dev" target="_blank" style="margin-right:8px">勾股DEV</a><a class="layui-badge layui-bg-blue" href="https://gitee.com/gouguopen/guoguadmin" target="_blank">勾股ADMIN</a></td>
+					</tr>
+					<tr>
+						<td colspan="4" style="color:#E94335; font-size:14px"><strong>腾讯云服务器，通过我们的代理购买低至 1 折，点击图片了解详情</strong></td>
+					</tr>
+					<tr>
+						<td colspan="4">
+							<a href="https://curl.qcloud.com/h3ibq5lX" target="_blank"><img src="https://blog.gougucms.com/storage/image/480x300.jpg" style="width:100%; max-width:100%; border-radius:6px; cursor:pointer;" align=center /></a>
+						</td>
+					</tr>
+					{/eq}
+				</table>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+function layoutSystem(){
+
+}
+</script>

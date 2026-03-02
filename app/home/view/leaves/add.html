@@ -1,0 +1,93 @@
+{extend name="../../base/view/common/base" /}
+<!-- 主体 -->
+{block name="body"}
+<form class="layui-form p-page" lay-filter="form-leaves">
+	<h3 class="pb-2">请假</h3>
+	<table class="layui-table layui-table-form">
+		<tr>
+			<td class="layui-td-gray-2">开始时间<font>*</font></td>
+			<td><input name="start_date" class="layui-input tool-time" value="{$detail.start_date|default=''}" readonly lay-verify="required" placeholder="请选择开始时间" lay-reqText="请选择开始时间" data-type="datetime" data-format="yyyy-MM-dd HH:mm"></td>
+			<td class="layui-td-gray">结束时间<font>*</font></td>
+			<td><input name="end_date" class="layui-input tool-time" value="{$detail.end_date|default=''}" readonly lay-verify="required" placeholder="请选择结束时间" lay-reqText="请选择结束时间" data-type="datetime" data-format="yyyy-MM-dd HH:mm"></td>
+		</tr>
+		<tr>
+			<td class="layui-td-gray">请假天数<font>*</font></td>
+			<td><input name="duration" class="layui-input" value="{$detail.duration|default=''}" lay-verify="required|number" placeholder="请输入请假天数" lay-reqText="请输入请假天数"></td>
+			<td class="layui-td-gray">请假类型<font>*</font></td>
+			<td>
+				<select name="types" lay-verify="required" lay-reqText="请选择请假类型">
+				  <option value="">--请选择--</option>
+				  {volist name=":get_leaves_types(1)" id="vo"}
+					{empty name="$detail"}
+						<option value="{$vo.id}">{$vo.title}</option>
+					{else/}
+						<option value="{$vo.id}" {eq name="$detail.types" value="$vo.id"} selected{/eq}>{$vo.title}</option>
+					{/empty}
+				  {/volist}
+				</select>
+			</td>
+		</tr>
+		<tr>
+			<td class="layui-td-gray">请假事由<font>*</font></td>
+			<td colspan="3"><textarea name="reason" placeholder="请输入请假事由" class="layui-textarea" lay-verify="required" lay-reqText="请输入请假事由">{$detail.reason|default=''}</textarea></td>
+		</tr>
+		<tr>
+			<td class="layui-td-gray">附件 <button type="button" class="layui-btn layui-btn-xs" id="uploadBtn"><i class="layui-icon"></i></button></td>
+			<td colspan="3">
+				<div class="layui-row" id="uploadBox">
+					<input data-type="file" type="hidden" name="file_ids" value="{$detail.file_ids|default=''}">
+					{notempty name="$detail.file_ids"}
+					{volist name="$detail.file_array" id="vo"}
+					<div class="layui-col-md4">{:file_card($vo)}</div>
+					{/volist}
+					{/notempty}
+				</div>
+			</td>
+		</tr>
+	</table>
+	<div id="checkBox" data-status="{$detail.check_status|default=0}" data-id="{$detail.id|default=0}" data-checkflowid="{$detail.check_flow_id|default=0}" class="pt-3"></div>
+	<div class="pt-4">
+		<input type="hidden" name="id" value="{$detail.id|default=0}">
+		<button class="layui-btn layui-btn-normal" lay-submit="" lay-filter="webform">立即提交</button>
+		<button type="reset" class="layui-btn layui-btn-primary">重置</button>
+	</div>
+</form>
+{/block}
+<!-- /主体 -->
+
+<!-- 脚本 -->
+{block name="script"}
+<script>
+	const moduleInit = ['tool','uploadPlus','oaCheck'];
+	function gouguInit() {
+		var form = layui.form,tool=layui.tool,uploadPlus=layui.uploadPlus,oaCheck=layui.oaCheck;
+		oaCheck.init({
+			check_name:'leaves',
+			check_btn:0
+		});	
+		var fileUp = new uploadPlus();
+	
+		//监听提交
+		form.on('submit(webform)', function (data) {
+			let callback = function (e) {
+				layer.msg(e.msg);
+				if (e.code == 0) {
+					let checkCallback = function (e) {
+						layer.msg(e.msg);
+						if (e.code == 0) {
+							tool.sideClose(1000);				
+						}
+					}
+					data.field.check_name = 'leaves';
+					data.field.action_id = e.data.return_id;
+					oaCheck.submit(data.field,checkCallback);
+				}
+			}
+			let clickbtn = $(this);
+			tool.post("/home/leaves/add", data.field, callback,clickbtn);
+			return false;
+		});
+	}
+</script>
+{/block}
+<!-- /脚本 -->

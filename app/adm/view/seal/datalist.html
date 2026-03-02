@@ -1,0 +1,149 @@
+{extend name="../../base/view/common/base" /}
+<!-- 主体 -->
+{block name="body"}
+
+<div class="p-page">
+	<div class="layui-card border-x border-t" style="margin-bottom:0; box-shadow:0 0 0 0 rgb(5 32 96 / 0%)">
+		<div class="body-table layui-tab layui-tab-brief" lay-filter="tab">
+			<ul class="layui-tab-title">
+				<li class="layui-this">全部</li>
+				<li>我申请的</li>
+				<li>待我审批</li>
+				<li>我已审批</li>
+				<li>抄送我的</li>
+			</ul>
+		</div>
+	</div>
+	<form class="layui-form gg-form-bar border-x" id="barsearchform">
+		<div class="layui-input-inline" style="width:128px">
+			<select name="check_status">
+				<option value="">选择审批状态</option>
+				{volist name=":get_check_status()" id="vo"}
+				<option value="{$key}">{$vo}</option>
+				{/volist}
+			</select>
+		</div>
+		<div class="layui-input-inline" style="width:128px">
+			<select name="seal_cate_id">
+				<option value="">选择印章类型</option>
+				{volist name=":get_base_data('seal_cate')" id="vo"}
+				<option value="{$vo.id}">{$vo.title}</option>
+				{/volist}
+			</select>
+		</div>
+		<div class="layui-input-inline" style="width:300px">
+			<input type="text" name="keywords" placeholder="关键字" class="layui-input" autocomplete="off" />
+		</div>
+		<div class="layui-input-inline" style="width:150px">
+			<input type="hidden" name="tab" value="0" />
+			<button class="layui-btn layui-btn-normal" lay-submit="" lay-filter="table-search"><i class="layui-icon layui-icon-search mr-1"></i>搜索</button>
+			<button type="reset" class="layui-btn layui-btn-reset" lay-filter="table-reset">清空</button>
+		</div>
+	</form>
+	<table class="layui-hide" id="table_seal" lay-filter="table_seal"></table>
+</div>
+
+<script type="text/html" id="toolbarDemo">
+  <div class="layui-btn-container">
+  	<button class="layui-btn layui-btn-sm tool-add" type="button" data-href="/adm/seal/add">+ 用章申请</button>
+  </div>
+</script>
+
+{/block}
+<!-- /主体 -->
+
+<!-- 脚本 -->
+{block name="script"}
+<script>
+	const moduleInit = ['tool','tablePlus'];
+	function gouguInit() {
+		var table = layui.tablePlus, tool = layui.tool, element = layui.element;
+		//tab切换
+		element.on('tab(tab)', function(data){
+			$('[name="tab"]').val(data.index);
+			$("#barsearchform")[0].reset();
+			layui.pageTable.reload({where:{tab:data.index},page:{curr:1}});
+			return false;
+		});
+		
+		layui.pageTable = table.render({
+			elem: "#table_seal"
+			, toolbar: "#toolbarDemo"
+			,url: "/adm/seal/datalist"
+			,page: true
+			,limit: 20
+			,cellMinWidth: 60
+			,height: 'full-154'
+			,cols: [[
+				{field:'id',width:80, title: 'ID号', align:'center'}
+				,{field:'check_status',title: '审批状态',width:112, align:'center',templet: function(d){
+					var html = '<span class="check-status-color-'+d.check_status+'">『'+d.check_status_str+'』</span>';
+					return html;
+				}}
+				,{field:'title',title: '用章申请主题',minWidth:240}
+				,{field:'seal_cate',title: '用章类型',width:100, align:'center'}
+				,{field:'is_borrow',title: '是否外借',width:80, align:'center',templet: function(d){
+					if(d.is_borrow==1){
+						return '<div class="red">是</div>';
+					}
+					else{
+						return '<div class="green">否</div>';
+					}
+				}}
+				,{field:'use_dname',title: '用印部门',width:100, align:'center'}
+				,{field:'num',title: '盖章次数',width:80, align:'center'}
+				,{field:'admin_name',title: '申请人',width:90, align:'center'}
+				,{field:'create_time', title: '创建时间',width:150,align:'center'}
+				,{width:120,fixed:'right',title: '操作', align:'center',templet: function(d){
+					var html='';
+					var btn1='<a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="view">详细</a>';
+					var btn2='<a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>';
+					var btn3='<a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>';
+					html = '<div class="layui-btn-group">'+btn1+btn2+btn3+'</div>';
+					if((d.check_status==0||d.check_status==4) && d.admin_id == login_admin){
+						return '<div class="layui-btn-group">'+btn1+btn2+btn3+'</div>';
+					}
+					else{
+						return '<div class="layui-btn-group">'+btn1+'</div>';
+					}
+				}}
+			]]
+		});
+		
+		//表头工具栏事件
+		table.on('toolbar(table_seal)', function(obj){
+			if (obj.event === 'add') {
+				tool.side("/adm/seal/add");
+				return;
+			}
+		});	
+			
+		table.on('tool(table_seal)',function (obj) {
+			var checkStatus = table.checkStatus(obj.config.id); //获取选中行状态
+			var data = obj.data;
+			if (obj.event === 'view') {
+				tool.side("/adm/seal/view?id="+data.id);
+				return;
+			}
+			if (obj.event === 'edit') {
+				tool.side("/adm/seal/add?id="+data.id);
+				return;
+			}
+			if (obj.event === 'del') {
+				layer.confirm('确定要删除该内容吗?', { icon: 3, title: '提示' }, function (index) {
+					let callback = function (e) {
+						layer.msg(e.msg);
+						if (e.code == 0) {
+							obj.del();
+						}
+					}
+					tool.delete("/adm/seal/del", { id: data.id }, callback);
+					layer.close(index);
+				});
+				return;
+			}
+		});
+	}
+</script>
+{/block}
+<!-- /脚本 -->

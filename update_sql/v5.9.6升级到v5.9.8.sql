@@ -1,0 +1,1 @@
+ALTER TABLE `oa_seal_cate` ADD COLUMN `dids` varchar(255) NOT NULL DEFAULT '' COMMENT '应用部门' AFTER `title`;
