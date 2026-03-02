@@ -1,0 +1,240 @@
+{extend name="../../base/view/common/base" /}
+{block name="body"}
+<div class="p-page">
+	<!-- 搜索表单 -->
+	<div class="layui-form gg-form-bar border-t border-x" lay-filter="searchForm" style="padding: 15px 15px; margin-bottom: 10px; display: flex; align-items: center; flex-wrap: wrap;">
+		<div class="layui-form-item layui-inline" style="margin-bottom: 0; display: flex; align-items: center;">
+			<label class="layui-form-label" style="width: auto; padding-right: 8px;">项目名称</label>
+			<div class="layui-input-inline" style="width: 180px; margin-right: 10px;">
+				<input type="text" name="project_name" placeholder="请输入项目名称" class="layui-input">
+			</div>
+		</div>
+		<div class="layui-form-item layui-inline" style="margin-bottom: 0; display: flex; align-items: center;">
+			<label class="layui-form-label" style="width: auto; padding-right: 8px;">标书负责人</label>
+			<div class="layui-input-inline" style="width: 150px; margin-right: 10px;">
+				<input type="text" name="tender_leader" placeholder="请输入负责人" class="layui-input">
+			</div>
+		</div>
+		<div class="layui-form-item layui-inline" style="margin-bottom: 0; display: flex; align-items: center;">
+			<label class="layui-form-label" style="width: auto; padding-right: 8px;">招标机构</label>
+			<div class="layui-input-inline" style="width: 180px; margin-right: 10px;">
+				<input type="text" name="tender_agency" placeholder="请输入招标机构" class="layui-input">
+			</div>
+		</div>
+		<div class="layui-form-item layui-inline" style="margin-bottom: 7px;display: flex;align-items: center;margin-left: 23px;">
+			<button class="layui-btn layui-btn-sm layui-btn-primary" lay-submit lay-filter="resetSearch" style="margin-right: 8px;">重置</button>
+			<button class="layui-btn layui-btn-sm" lay-submit lay-filter="doSearch">搜索</button>
+		</div>
+		<div class="layui-form-item layui-inline" style="margin-left: auto; margin-bottom: 0;">
+			<button class="layui-btn layui-btn-sm tool-add" type="button" data-href="/projecttender/index/add">+ 添加项目投标信息</button>
+		</div>
+	</div>
+
+	<!-- 表格容器 -->
+	<table id="table_project_tender" lay-filter="table_project_tender"></table>
+
+	<!-- 外部独立分页容器 -->
+	<div id="external-page-bar" style="text-align: right; padding: 15px 0; min-height: 40px;"></div>
+</div>
+
+<!-- 彻底隐藏内置分页 -->
+<style>
+	.layui-table-view .layui-table-page,
+	.layui-table-box .layui-table-page,
+	#table_project_tender + .layui-table-page,
+	.layui-table-page {
+		display: none !important;
+		visibility: hidden !important;
+		height: 0 !important;
+		overflow: hidden !important;
+		margin: 0 !important;
+		padding: 0 !important;
+	}
+</style>
+{/block}
+
+{block name="script"}
+<script>
+	const moduleInit = ['tool'];
+
+	function gouguInit() {
+		var table = layui.table,
+				form = layui.form,
+				layer = layui.layer,
+				tool = layui.tool,
+				laypage = layui.laypage,
+				$ = layui.$;
+
+		// 全局状态
+		var state = {
+			page: 1,
+			limit: 10,
+			total: 0,
+			where: {}
+		};
+
+		// 初始化表格
+		var tableIns = table.render({
+			elem: '#table_project_tender',
+			url: '/projecttender/index/datalist',
+			method: 'GET',
+			page: true,
+			limits: [10, 20, 50],
+			where: state.where,
+			cols: [[
+				{field:'id', width:80, title: '主键 ID', align:'center'},
+				{field:'month', width:100, title: '月份', align:'center'},
+				{field:'tender_leader', width:120, title: '标书负责人', align:'center'},
+				{field:'purchase_date', width:120, title: '购买日期', align:'center', templet: d => d.purchase_date || '-'},
+				{field:'customer_name', width:150, title: '客户名称'},
+				{field:'project_name', width:200, title: '项目名称', templet: d => `<a href="javascript:;" class="project-name-link" data-id="${d.id}" style="color:#1890ff; text-decoration:underline;">${d.project_name}</a>`},
+				{field:'tender_agency', width:150, title: '招标机构'},
+				{field:'project_cycle', width:100, title: '项目周期', align:'center'},
+				{field:'shortlisted_countries', width:100, title: '入围家数', align:'center'},
+				{field:'budget_amount', width:120, title: '预算金额（元）', align:'right', templet: d => `¥${d.budget_amount ? parseFloat(d.budget_amount).toFixed(2) : '0.00'}`},
+				{field:'bid_opening_date', width:120, title: '开标日期', align:'center', templet: d => d.bid_opening_date || '-'},
+				{field:'is_tender_submitted', width:100, title: '是否投标', align:'center', templet: d => {
+						return d.is_tender_submitted ? (d.is_tender_submitted == '是' ? '<span style="color:#52c41a;">是</span>' : '<span style="color:#f5222d;">否</span>') : '-';
+					}},
+				{field:'non_tender_reason', width:180, title: '未投原因'},
+				{field:'tender_document_fee', width:120, title: '标书款（元）', align:'right', templet: d => `¥${d.tender_document_fee ? parseFloat(d.tender_document_fee).toFixed(2) : '0.00'}`},
+				{field:'has_tender_invoice', width:120, title: '标书款发票', align:'center', templet: d => {
+						return d.has_tender_invoice ? (d.has_tender_invoice == '是' ? '<span style="color:#52c41a;">是</span>' : '<span style="color:#f5222d;">否</span>') : '-';
+					}},
+				{field:'is_deposit_paid', width:120, title: '是否缴纳保证金', align:'center', templet: d => {
+						return d.is_deposit_paid ? (d.is_deposit_paid == '是' ? '<span style="color:#52c41a;">是</span>' : '<span style="color:#f5222d;">否</span>') : '-';
+					}},
+				{field:'tender_deposit', width:150, title: '投标保证金（元）', align:'right', templet: d => `¥${d.tender_deposit ? parseFloat(d.tender_deposit).toFixed(2) : '0.00'}`},
+				{field:'deposit_account_name', width:150, title: '保证金账户名'},
+				{field:'deposit_bank', width:150, title: '保证金开户行'},
+				{field:'deposit_account_no', width:180, title: '保证金账号'},
+				{field:'is_deposit_refunded', width:120, title: '是否退回保证金', align:'center', templet: d => {
+						return d.is_deposit_refunded ? (d.is_deposit_refunded == '是' ? '<span style="color:#52c41a;">是</span>' : '<span style="color:#f5222d;">否</span>') : '-';
+					}},
+				{field:'bid_result', width:100, title: '中标结果', align:'center', templet: d => {
+						if(d.bid_result == '中标') return '<span style="color:#52c41a;">中标</span>';
+						if(d.bid_result == '未中标') return '<span style="color:#f5222d;">未中标</span>';
+						if(d.bid_result == '待开标') return '<span style="color:#1890ff;">待开标</span>';
+						return '-';
+					}},
+				{field:'bid_service_fee', width:120, title: '中标服务费（元）', align:'right', templet: d => `¥${d.bid_service_fee ? parseFloat(d.bid_service_fee).toFixed(2) : '0.00'}`},
+				{field:'create_time', width:180, title: '创建时间', align:'center'},
+				{field:'update_time', width:180, title: '更新时间', align:'center'},
+				{width:192, title: '操作', align:'center', templet: d => {
+						return `<div class="layui-btn-group">
+							<button class="layui-btn layui-bg-blue layui-btn-xs" lay-event="edit">编辑</button>
+							<button class="layui-btn layui-bg-red layui-btn-xs" lay-event="del">删除</button>
+						</div>`;
+					}}
+			]],
+			done: function(res, curr, count) {
+				// 【新增】数据校验：修复后端返回count为0但有数据的情况
+				if(res.code != 0) {
+					layer.msg(res.msg || '数据加载失败', {icon: 2});
+					return;
+				}
+
+				// 修正count值：如果count为0但data有数据，用data长度作为兜底
+				let realCount = count || (res.data ? res.data.length : 0);
+				state.total = realCount;
+				state.page = curr || 1;
+
+				// 渲染外部分页
+				renderExternalPage();
+
+				// 绑定项目名称点击事件
+				$('.project-name-link').off('click').on('click', function() {
+					tool.side(`/projecttender/index/detail?id=${$(this).data('id')}`);
+				});
+			}
+		});
+
+		// 核心修复1：暴露表格实例和刷新方法到全局，供子页面调用
+		window.refreshProjectTenderTable = function() {
+			tableIns.reload({
+				where: state.where,  // 保留搜索条件
+				page: { curr: state.page }  // 保留当前页码
+			});
+		};
+		// 兼容原有调用方式
+		if (parent.layui) {
+			parent.layui.pageTable = tableIns;
+		}
+
+		// 渲染外部分页
+		function renderExternalPage() {
+			laypage.render({
+				elem: 'external-page-bar',
+				count: state.total,
+				curr: state.page,
+				limit: state.limit,
+				limits: [10, 20, 50],
+				layout: ['count', 'prev', 'page', 'next', 'limit', 'refresh', 'skip'],
+				theme: '#1E9FFF',
+				jump: function(obj, first) {
+					if (!first) {
+						state.page = obj.curr;
+						state.limit = obj.limit;
+						tableIns.reload({
+							page: {
+								curr: obj.curr,
+								limit: obj.limit
+							},
+							where: state.where
+						});
+					}
+				}
+			});
+		}
+
+		// 搜索事件
+		form.on('submit(doSearch)', function(data) {
+			state.where = data.field;
+			tableIns.reload({
+				where: state.where,
+				page: { curr: 1 }
+			});
+			return false;
+		});
+
+		// 重置事件
+		form.on('submit(resetSearch)', function() {
+			form.val('searchForm', {
+				project_name: '',
+				tender_leader: '',
+				tender_agency: ''
+			});
+			state.where = {};
+			tableIns.reload({
+				where: state.where,
+				page: { curr: 1 }
+			});
+			return false;
+		});
+
+		// 表格操作事件
+		table.on('tool(table_project_tender)', function(obj) {
+			var data = obj.data;
+			if(obj.event === 'edit') {
+				tool.side(`/projecttender/index/add?id=${data.id}`);
+			} else if(obj.event === 'del') {
+				layer.confirm('确定删除该条记录？', {icon: 3}, function(index) {
+					tool.delete('/projecttender/index/del', {id: data.id}, function(e) {
+						layer.msg(e.msg, {icon: e.code == 0 ? 1 : 2});
+						if(e.code == 0) {
+							tableIns.reload({
+								where: state.where,
+								page: { curr: state.page }
+							});
+						}
+					});
+					layer.close(index);
+				});
+			}
+		});
+
+		// 初始化外部分页
+		renderExternalPage();
+	}
+</script>
+{/block}

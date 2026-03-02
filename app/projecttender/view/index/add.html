@@ -1,0 +1,429 @@
+{extend name="../../base/view/common/base" /}
+{block name="body"}
+<div class="p-page">
+    <div class="layui-card">
+        <div class="layui-card-header">{:isset($info['id']) && $info['id'] ? '投标信息编辑' : '新增投标信息'}</div>
+        <div class="layui-card-body">
+            <form id="tenderForm" class="layui-form layui-form-pane" lay-filter="tenderForm" enctype="multipart/form-data" autocomplete="off">
+                <input type="hidden" name="id" value="{:isset($info['id']) ? $info['id'] : 0}">
+                <input type="hidden" name="_deleted_attach_ids" value="">
+
+                <table class="layui-table layui-table-borderless" style="width: 100%;">
+                    <colgroup>
+                        <col width="150">
+                        <col width="300">
+                        <col width="150">
+                        <col width="300">
+                    </colgroup>
+                    <tbody>
+                    <tr>
+                        <td class="layui-td-gray">月份<span style="color: red;">*</span></td>
+                        <td>
+                            <input type="text" name="month" id="monthPicker" lay-verify="required" placeholder="请选择月份" class="layui-input" value="{:isset($info['id']) ? $info['month'] : ''}" autocomplete="off">
+                        </td>
+                        <td class="layui-td-gray">标书负责人<span style="color: red;">*</span></td>
+                        <td>
+                            <input type="text" name="tender_leader" lay-verify="required" placeholder="请输入标书负责人" class="layui-input" value="{:isset($info['id']) ? $info['tender_leader'] : ''}" autocomplete="off">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="layui-td-gray">购买日期</td>
+                        <td>
+                            <input type="date" name="purchase_date" class="layui-input" value="{:isset($info['id']) ? $info['purchase_date'] : ''}" autocomplete="off">
+                        </td>
+                        <td class="layui-td-gray">客户名称<span style="color: red;">*</span></td>
+                        <td>
+                            <input type="text" name="customer_name" lay-verify="required" placeholder="请输入客户名称" class="layui-input" value="{:isset($info['id']) ? $info['customer_name'] : ''}" autocomplete="off">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="layui-td-gray">项目名称<span style="color: red;">*</span></td>
+                        <td>
+                            <input type="text" name="project_name" lay-verify="required" placeholder="请输入项目名称" class="layui-input" value="{:isset($info['id']) ? $info['project_name'] : ''}" autocomplete="off">
+                        </td>
+                        <td class="layui-td-gray">招标机构</td>
+                        <td>
+                            <input type="text" name="tender_agency" placeholder="请输入招标机构" class="layui-input" value="{:isset($info['id']) ? $info['tender_agency'] : ''}" autocomplete="off">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="layui-td-gray">项目周期</td>
+                        <td>
+                            <input type="number" id="project_cycle_months" placeholder="请输入项目周期（月）" class="layui-input" value="" autocomplete="off">
+                            <div id="project_cycle_display" style="margin-top: 5px; color: #666;"></div>
+                            <input type="hidden" name="project_cycle" id="project_cycle_hidden" value="{:isset($info['id']) ? $info['project_cycle'] : ''}">
+                        </td>
+                        <td class="layui-td-gray">入围家数</td>
+                        <td>
+                            <input type="number" name="shortlisted_countries" placeholder="请输入入围家数" class="layui-input" value="{:isset($info['id']) ? $info['shortlisted_countries'] : ''}" autocomplete="off">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="layui-td-gray">预算金额（元）</td>
+                        <td>
+                            <input type="text" name="budget_amount" placeholder="请输入预算金额" class="layui-input" value="{:isset($info['id']) ? $info['budget_amount'] : '0.00'}" autocomplete="off">
+                        </td>
+                        <td class="layui-td-gray">开标日期</td>
+                        <td>
+                            <input type="date" name="bid_opening_date" class="layui-input" value="{:isset($info['id']) ? $info['bid_opening_date'] : ''}" autocomplete="off">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="layui-td-gray">是否投标<span style="color: red;">*</span></td>
+                        <td>
+                            <select name="is_tender_submitted" lay-verify="required" class="layui-select">
+                                <option value="">请选择</option>
+                                <option value="是" {:isset($info['id']) && $info['is_tender_submitted'] == '是' ? 'selected' : ''}>是</option>
+                                <option value="否" {:isset($info['id']) && $info['is_tender_submitted'] == '否' ? 'selected' : ''}>否</option>
+                            </select>
+                        </td>
+                        <td class="layui-td-gray">未投原因</td>
+                        <td>
+                            <textarea name="non_tender_reason" rows="3" placeholder="未投标时填写原因" class="layui-textarea" autocomplete="off">{:isset($info['id']) ? $info['non_tender_reason'] : ''}</textarea>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="layui-td-gray">标书款（元）</td>
+                        <td>
+                            <input type="text" name="tender_document_fee" placeholder="请输入标书款" class="layui-input" value="{:isset($info['id']) ? $info['tender_document_fee'] : '0.00'}" autocomplete="off">
+                        </td>
+                        <td class="layui-td-gray">标书款发票</td>
+                        <td>
+                            <select name="has_tender_invoice" class="layui-select">
+                                <option value="">请选择</option>
+                                <option value="是" {:isset($info['id']) && $info['has_tender_invoice'] == '是' ? 'selected' : ''}>是</option>
+                                <option value="否" {:isset($info['id']) && $info['has_tender_invoice'] == '否' ? 'selected' : ''}>否</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="layui-td-gray">是否缴纳保证金</td>
+                        <td>
+                            <select name="is_deposit_paid" class="layui-select">
+                                <option value="">请选择</option>
+                                <option value="是" {:isset($info['id']) && $info['is_deposit_paid'] == '是' ? 'selected' : ''}>是</option>
+                                <option value="否" {:isset($info['id']) && $info['is_deposit_paid'] == '否' ? 'selected' : ''}>否</option>
+                            </select>
+                        </td>
+                        <td class="layui-td-gray">投标保证金（元）</td>
+                        <td>
+                            <input type="text" name="tender_deposit" placeholder="请输入投标保证金" class="layui-input" value="{:isset($info['id']) ? $info['tender_deposit'] : '0.00'}" autocomplete="off">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="layui-td-gray">保证金账户名</td>
+                        <td>
+                            <input type="text" name="deposit_account_name" placeholder="请输入账户名" class="layui-input" value="{:isset($info['id']) ? $info['deposit_account_name'] : ''}" autocomplete="off">
+                        </td>
+                        <td class="layui-td-gray">保证金开户行</td>
+                        <td>
+                            <input type="text" name="deposit_bank" placeholder="请输入开户行" class="layui-input" value="{:isset($info['id']) ? $info['deposit_bank'] : ''}" autocomplete="off">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="layui-td-gray">保证金账号</td>
+                        <td>
+                            <input type="text" name="deposit_account_no" placeholder="请输入账号" class="layui-input" value="{:isset($info['id']) ? $info['deposit_account_no'] : ''}" autocomplete="off">
+                        </td>
+                        <td class="layui-td-gray">是否退回保证金</td>
+                        <td>
+                            <select name="is_deposit_refunded" class="layui-select">
+                                <option value="">请选择</option>
+                                <option value="是" {:isset($info['id']) && $info['is_deposit_refunded'] == '是' ? 'selected' : ''}>是</option>
+                                <option value="否" {:isset($info['id']) && $info['is_deposit_refunded'] == '否' ? 'selected' : ''}>否</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="layui-td-gray">中标结果</td>
+                        <td>
+                            <select name="bid_result" class="layui-select">
+                                <option value="">请选择</option>
+                                <option value="中标" {:isset($info['id']) && $info['bid_result'] == '中标' ? 'selected' : ''}>中标</option>
+                                <option value="未中标" {:isset($info['id']) && $info['bid_result'] == '未中标' ? 'selected' : ''}>未中标</option>
+                                <option value="待开标" {:isset($info['id']) && $info['bid_result'] == '待开标' ? 'selected' : ''}>待开标</option>
+                            </select>
+                        </td>
+                        <td class="layui-td-gray">中标服务费（元）</td>
+                        <td>
+                            <input type="text" name="bid_service_fee" placeholder="请输入中标服务费" class="layui-input" value="{:isset($info['id']) ? $info['bid_service_fee'] : '0.00'}" autocomplete="off">
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+
+                <div class="layui-form-item" style="margin-top: 20px;">
+                    <label class="layui-form-label">附件管理</label>
+                    <div class="layui-input-block">
+                        <input type="file" id="fileInput" multiple class="layui-btn">
+                        <button type="button" id="uploadBtn" class="layui-btn layui-btn-primary" style="margin-left: 10px;">上传附件</button>
+
+                        <div id="attachmentList" style="margin-top: 15px;">
+                            {if isset($info['id']) && !empty($attachments)}
+                            {volist name="attachments" id="attach"}
+                            <div class="layui-upload-list" data-id="{$attach.id}" style="padding: 8px; border: 1px solid #e6e6e6; margin-bottom: 8px; border-radius: 4px;">
+                                <span class="file-item-text" data-size="{$attach.file_size}">
+                                    {$attach.file_name} (<span class="size-val">计算中...</span>)
+                                </span>
+                                <a href="{$attach.file_path}" download="{$attach.file_name}" class="layui-btn layui-btn-xs layui-btn-success" style="margin-left: 10px;">下载</a>
+                                <button type="button" class="del-attach layui-btn layui-btn-xs layui-btn-danger" data-has-id="1" style="margin-left: 5px;">删除</button>
+
+                                <input type="hidden" name="attachments[{$i}][id]" value="{$attach.id}">
+                                <input type="hidden" name="attachments[{$i}][file_name]" value="{$attach.file_name}">
+                                <input type="hidden" name="attachments[{$i}][file_path]" value="{$attach.file_path}">
+                                <input type="hidden" name="attachments[{$i}][file_size]" value="{$attach.file_size}">
+                                <input type="hidden" name="attachments[{$i}][file_ext]" value="{$attach.file_ext}">
+                                <input type="hidden" name="attachments[{$i}][file_mime]" value="{$attach.file_mime}">
+                                <input type="hidden" name="attachments[{$i}][sort]" value="{$attach.sort}">
+                            </div>
+                            {/volist}
+                            {else}
+                            <p class="layui-text-muted">暂无附件</p>
+                            {/if}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button type="button" id="submitBtn" class="layui-btn layui-btn-success">{:isset($info['id']) && $info['id'] ? '更新' : '提交'}</button>
+                        <button type="button" onclick="closeSide()" class="layui-btn layui-btn-default" style="margin-left: 10px;">取消</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{/block}
+
+{block name="script"}
+<script>
+    function closeSide() {
+        if (parent.layui && parent.layui.tool && typeof parent.layui.tool.closeSide === 'function') {
+            parent.layui.tool.closeSide();
+        } else if (parent.layer && typeof parent.layer.closeAll === 'function') {
+            parent.layer.closeAll();
+        } else {
+            let index = parent.layer.getFrameIndex(window.name);
+            if (index !== false) {
+                parent.layer.close(index);
+            }
+        }
+    }
+
+    function convertProjectCycle(months) {
+        if (isNaN(months) || months <= 0) {
+            return '';
+        }
+        let years = Math.floor(months / 12);
+        let remainingMonths = months % 12;
+        let displayText = '';
+        if (years > 0) {
+            displayText += years + '年';
+        }
+        if (remainingMonths > 0) {
+            displayText += remainingMonths + '个月';
+        }
+        return displayText;
+    }
+
+    function reverseConvertCycle(cycleText) {
+        if (!cycleText) return 0;
+        let years = 0, months = 0;
+        let yearMatch = cycleText.match(/(\d+)年/);
+        if (yearMatch) {
+            years = parseInt(yearMatch[1]);
+        }
+        let monthMatch = cycleText.match(/(\d+)个月/);
+        if (monthMatch) {
+            months = parseInt(monthMatch[1]);
+        }
+        return years * 12 + months;
+    }
+
+    const moduleInit = ['form', 'laydate'];
+    function gouguInit() {
+        layui.use(['form', 'layer', 'laydate'], function(){
+            var form = layui.form, layer = layui.layer, laydate = layui.laydate;
+            // 修复：改用 ThinkPHP 原生语法计算附件索引，移除不兼容的 default 过滤器
+            let attachIndex = {:isset($info['id']) ? (count($attachments) + 1) : 1};
+
+            // 修复：月份选择器值渲染，兼容 ThinkPHP 模板语法
+            laydate.render({
+                elem: '#monthPicker',
+                type: 'month',
+                format: 'yyyy-MM',
+                value: "{:isset($info['id']) ? $info['month'] : ''}",
+                trigger: 'click'
+            });
+
+            function formatFileSize(size) {
+                size = parseInt(size);
+                if (isNaN(size) || size <= 0) return '0 B';
+                if (size < 1024) return size + ' B';
+                else if (size < 1024*1024) return (size/1024).toFixed(2) + ' KB';
+                else return (size/(1024*1024)).toFixed(2) + ' MB';
+            }
+
+            $('.file-item-text').each(function() {
+                var size = $(this).data('size');
+                var text = formatFileSize(size);
+                $(this).find('.size-val').text(text);
+            });
+
+            // 修复：项目周期回显，改用原生语法渲染变量
+            $(function() {
+                let savedCycleText = "{:isset($info['id']) ? $info['project_cycle'] : ''}";
+                if (savedCycleText) {
+                    let totalMonths = reverseConvertCycle(savedCycleText);
+                    $('#project_cycle_months').val(totalMonths);
+                    let displayText = convertProjectCycle(totalMonths);
+                    $('#project_cycle_display').text('换算结果：' + displayText);
+                    $('#project_cycle_hidden').val(displayText);
+                } else {
+                    $('#project_cycle_hidden').val('');
+                    $('#project_cycle_display').text('');
+                }
+
+                $('#project_cycle_months').on('input', function() {
+                    let months = parseInt($(this).val());
+                    let displayText = convertProjectCycle(months);
+                    $('#project_cycle_display').text(displayText ? '换算结果：' + displayText : '');
+                    $('#project_cycle_hidden').val(displayText);
+                });
+            });
+
+            // 修复5：上传后清空文件选择框，避免重复上传旧文件
+            $('#uploadBtn').click(function() {
+                let files = $('#fileInput')[0].files;
+                if (files.length === 0) {
+                    layer.msg('请选择要上传的文件！', {icon: 2});
+                    return;
+                }
+
+                for (let i = 0; i < files.length; i++) {
+                    let file = files[i];
+                    let formData = new FormData();
+                    formData.append('file', file);
+
+                    $.ajax({
+                        url: "{:url('projecttender/index/uploadAttachment')}",
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function(res) {
+                            if (res.code === 0) {
+                                let sizeText = formatFileSize(res.data.file_size);
+                                let html = `<div class="layui-upload-list" style="padding: 8px; border: 1px solid #e6e6e6; margin-bottom: 8px; border-radius: 4px;">
+                                    <span class="file-item-text" data-size="${res.data.file_size}">${res.data.file_name} (<span class="size-val">${sizeText}</span>)</span>
+                                    <a href="${res.data.file_path}" download="${res.data.file_name}" class="layui-btn layui-btn-xs layui-btn-success" style="margin-left: 10px;">下载</a>
+                                    <button type="button" class="del-attach layui-btn layui-btn-xs layui-btn-danger" data-has-id="0" style="margin-left: 5px;">删除</button>
+                                    <input type="hidden" name="attachments[${attachIndex}][file_name]" value="${res.data.file_name}">
+                                    <input type="hidden" name="attachments[${attachIndex}][file_path]" value="${res.data.file_path}">
+                                    <input type="hidden" name="attachments[${attachIndex}][file_size]" value="${res.data.file_size}">
+                                    <input type="hidden" name="attachments[${attachIndex}][file_ext]" value="${res.data.file_ext}">
+                                    <input type="hidden" name="attachments[${attachIndex}][file_mime]" value="${res.data.file_mime}">
+                                    <input type="hidden" name="attachments[${attachIndex}][sort]" value="${res.data.sort}">
+                                </div>`;
+                                $('#attachmentList').append(html);
+                                $('#attachmentList .layui-text-muted').remove();
+                                attachIndex++;
+                                layer.msg('上传成功！', {icon: 1});
+                                // 清空文件选择框
+                                $('#fileInput').val('');
+                            } else {
+                                layer.msg('上传失败：' + res.msg, {icon: 2});
+                            }
+                        },
+                        error: function() {
+                            layer.msg('上传请求失败！', {icon: 2});
+                        }
+                    });
+                }
+            });
+
+            $(document).on('click', '.del-attach', function() {
+                var $item = $(this).closest('.layui-upload-list');
+                var $idInput = $item.find('input[name$="[id]"]');
+
+                if ($idInput.length > 0 && $idInput.val()) {
+                    var idToDelete = $idInput.val();
+                    var $deletedInput = $('input[name="_deleted_attach_ids"]');
+                    var currentVal = $deletedInput.val();
+
+                    if (currentVal) {
+                        var ids = currentVal.split(',');
+                        if(ids.indexOf(idToDelete) === -1) {
+                            $deletedInput.val(currentVal + ',' + idToDelete);
+                        }
+                    } else {
+                        $deletedInput.val(idToDelete);
+                    }
+                }
+
+                $item.remove();
+                if ($('#attachmentList .layui-upload-list').length === 0) {
+                    $('#attachmentList').html('<p class="layui-text-muted">暂无附件</p>');
+                }
+            });
+
+            // 修复6：提交后强制清空表单，防止二次提交残留
+            $('#submitBtn').click(function() {
+                let requiredFields = ['month', 'tender_leader', 'customer_name', 'project_name', 'is_tender_submitted'];
+                for (let i = 0; i < requiredFields.length; i++) {
+                    let field = requiredFields[i];
+                    let $input = $('input[name="' + field + '"]');
+                    let $select = $('select[name="' + field + '"]');
+                    let val = ($input.val() || $select.val() || '').trim();
+
+                    if (!val) {
+                        let fieldName = {
+                            'month': '月份', 'tender_leader': '标书负责人', 'customer_name': '客户名称',
+                            'project_name': '项目名称', 'is_tender_submitted': '是否投标'
+                        }[field];
+                        layer.msg('请填写必填项：' + fieldName, {icon: 2});
+                        return;
+                    }
+                }
+
+                let formData = new FormData($('#tenderForm')[0]);
+
+                $.ajax({
+                    url: "{:url('projecttender/index/save')}",
+                    type: 'POST',
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    success: function(res) {
+                        if (res.code === 0) {
+                            layer.msg(res.msg, {icon: 1});
+                            setTimeout(function(){
+                                if (parent.window.refreshProjectTenderTable) {
+                                    parent.window.refreshProjectTenderTable();
+                                } else if(parent.layui && parent.layui.pageTable) {
+                                    parent.layui.pageTable.reload();
+                                }
+                                closeSide();
+                                // 强制清空表单
+                                $('#tenderForm')[0].reset();
+                                form.render();
+                            }, 1000);
+                        } else {
+                            layer.msg(res.msg, {icon: 2});
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('请求失败:', error);
+                        layer.msg('提交请求失败：' + error, {icon: 2});
+                    }
+                });
+            });
+
+            // 修复7：初始化时强制渲染表单，覆盖旧 DOM 数值
+            form.render();
+        });
+    }
+</script>
+{/block}

@@ -1,0 +1,125 @@
+{extend name="../../base/view/common/base" /}
+{block name="body"}
+<div class="p-page">
+    <div class="layui-form layui-form-pane">
+        <input type="hidden" name="project_tender_id" value="{$id}">
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">项目名称</label>
+            <div class="layui-input-block">
+                <input type="text" value="{$projectInfo.project_name}" class="layui-input" disabled>
+            </div>
+        </div>
+
+        <!-- 附件上传 -->
+        <div class="layui-form-item">
+            <label class="layui-form-label">附件上传</label>
+            <div class="layui-input-block">
+                <button type="button" class="layui-btn" id="upload_attachment">+ 选择文件</button>
+                <div class="layui-upload-list" id="attachment_list" style="margin-top: 10px;">
+                    <!-- 已上传附件列表将在这里动态生成 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 已有附件列表 -->
+        <div class="layui-form-item">
+            <label class="layui-form-label">已有附件</label>
+            <div class="layui-input-block">
+                {if !empty($attachments)}
+                <table class="layui-table" lay-size="sm">
+                    <thead>
+                    <tr>
+                        <th>文件名</th>
+                        <th>大小</th>
+                        <th>上传时间</th>
+                        <th>操作</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {foreach $attachments as $attachment}
+                    <tr>
+                        <td><a href="{$attachment.file_path}" target="_blank" style="color: #1890ff;">{$attachment.file_name}</a></td>
+                        <td>{$attachment.file_size|formatFileSize}</td>
+                        <td>{$attachment.create_time}</td>
+                        <td>
+                            <button type="button" class="layui-btn layui-btn-xs layui-btn-danger" onclick="deleteAttachment({$attachment.id})">删除</button>
+                        </td>
+                    </tr>
+                    {/foreach}
+                    </tbody>
+                </table>
+                {else}
+                <span style="color: #999;">暂无附件</span>
+                {/if}
+            </div>
+        </div>
+    </div>
+</div>
+{/block}
+
+{block name="script"}
+<script>
+    const moduleInit = ['form'];
+    function gouguInit() {
+        var form = layui.form;
+
+        // 初始化附件上传
+        layui.use('upload', function(){
+            var upload = layui.upload;
+
+            var uploadInst = upload.render({
+                elem: '#upload_attachment'
+                ,url: '/common/upload'
+                ,accept: 'file'
+                ,multiple: true
+                ,data: {
+                    module: 'projecttender',
+                    project_tender_id: {$id}
+                }
+                ,done: function(res){
+                    if(res.code == 0){
+                        var file = res.data;
+                        // 保存到附件表
+                        $.post("/projecttender/index/saveAttachment", {
+                            project_tender_id: {$id},
+                            file_name: file.name,
+                            file_path: file.path,
+                            file_size: file.size,
+                            file_ext: file.ext
+                        }, function(res){
+                            if(res.code == 0){
+                                layer.msg('上传成功', {icon: 1});
+                                // 刷新页面
+                                window.location.reload();
+                            } else {
+                                layer.msg(res.msg, {icon: 2});
+                            }
+                        }, 'json');
+                    } else {
+                        layer.msg(res.msg || '上传失败', {icon: 2});
+                    }
+                }
+                ,error: function(){
+                    layer.msg('上传失败，请重试', {icon: 2});
+                }
+            });
+        });
+
+        // 删除附件
+        window.deleteAttachment = function(id) {
+            layer.confirm('确定要删除这个附件吗？', {icon: 3, title:'提示'}, function(index){
+                $.post("/projecttender/index/deleteAttachment", {id: id}, function(res){
+                    if(res.code == 0){
+                        layer.msg('删除成功', {icon: 1});
+                        window.location.reload();
+                    } else {
+                        layer.msg(res.msg, {icon: 2});
+                    }
+                }, 'json');
+                layer.close(index);
+            });
+        }
+    }
+</script>
+{/block}

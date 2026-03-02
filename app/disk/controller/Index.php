@@ -142,6 +142,38 @@ class Index extends BaseController
             return view();
         }
     }
+
+    /**
+     * 回收站列表
+     */
+    public function clearlist2()
+    {
+        $param = get_params();
+        if (request()->isAjax()) {
+            $pid = isset($param['pid']) ? $param['pid'] : 0;
+            $where=[];
+            $where[]=['admin_id','=',$this->uid];
+            $where[]=['clear_time','=',0];
+            if($pid>0){
+                $where[]=['pid','=',$pid];
+            }
+            else{
+                $where[]=['delete_time','>',0];
+            }
+            if (!empty($param['ext'])) {
+                $where[] = ['file_ext', 'in',$param['ext']];
+            }
+            if (!empty($param['keywords'])) {
+                $where[] = ['name', 'like', '%' . $param['keywords'] . '%'];
+            }
+            $list = $this->model->datalist($param,$where);
+            $folder = get_pfolder($param['pid']);
+            return table_assign(0, '', $list,$folder);
+        }
+        else{
+            return view();
+        }
+    }
 	
     //添加&编辑
     public function add_group()

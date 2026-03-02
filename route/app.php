@@ -15,3 +15,7 @@ Route::get('think', function () {
 });
 
 Route::get('hello/:name', 'index/hello');
+//Route::get('projecttender/view/:id', 'app\project_tender\controller\Projecttendercontroller@view');
+
+// 测试路由
+Route::get('projecttender/test', '\app\projecttender\controller\TestController@index');

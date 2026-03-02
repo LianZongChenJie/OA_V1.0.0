@@ -1,0 +1,142 @@
+{extend name="../../base/view/common/base" /}
+{block name="body"}
+<div class="p-page">
+    <div class="layui-card">
+        <div class="layui-card-header">投标信息详情</div>
+        <div class="layui-card-body">
+            <table class="layui-table layui-table-borderless" style="width: 100%;">
+                <colgroup>
+                    <col width="150">
+                    <col width="300">
+                    <col width="150">
+                    <col width="300">
+                </colgroup>
+                <tbody>
+                <tr>
+                    <td class="layui-td-gray">月份</td>
+                    <td>{$info.month|default='-'}</td>
+                    <td class="layui-td-gray">标书负责人</td>
+                    <td>{$info.tender_leader|default='-'}</td>
+                </tr>
+                <tr>
+                    <td class="layui-td-gray">购买日期</td>
+                    <td>{$info.purchase_date|default='-'}</td>
+                    <td class="layui-td-gray">客户名称</td>
+                    <td>{$info.customer_name|default='-'}</td>
+                </tr>
+                <tr>
+                    <td class="layui-td-gray">项目名称</td>
+                    <td>{$info.project_name|default='-'}</td>
+                    <td class="layui-td-gray">招标机构</td>
+                    <td>{$info.tender_agency|default='-'}</td>
+                </tr>
+                <tr>
+                    <td class="layui-td-gray">项目周期</td>
+                    <td>{$info.project_cycle|default='-'}</td>
+                    <td class="layui-td-gray">入围家数</td>
+                    <td>{$info.shortlisted_countries|default='-'}</td>
+                </tr>
+                <tr>
+                    <td class="layui-td-gray">预算金额（元）</td>
+                    <td>¥{$info.budget_amount|default='0.00'}</td>
+                    <td class="layui-td-gray">开标日期</td>
+                    <td>{$info.bid_opening_date|default='-'}</td>
+                </tr>
+                <tr>
+                    <td class="layui-td-gray">是否投标</td>
+                    <td>{$info.is_tender_submitted == '是' ? '<span class="layui-badge layui-bg-green">是</span>' : ($info.is_tender_submitted == '否' ? '<span class="layui-badge layui-bg-red">否</span>' : '-')}</td>
+                    <td class="layui-td-gray">未投原因</td>
+                    <td>{$info.non_tender_reason|default='-'}</td>
+                </tr>
+                <tr>
+                    <td class="layui-td-gray">标书款（元）</td>
+                    <td>¥{$info.tender_document_fee|default='0.00'}</td>
+                    <td class="layui-td-gray">标书款发票</td>
+                    <td>{$info.has_tender_invoice == '是' ? '<span class="layui-badge layui-bg-green">是</span>' : ($info.has_tender_invoice == '否' ? '<span class="layui-badge layui-bg-red">否</span>' : '-')}</td>
+                </tr>
+                <tr>
+                    <td class="layui-td-gray">是否缴纳保证金</td>
+                    <td>{$info.is_deposit_paid == '是' ? '<span class="layui-badge layui-bg-green">是</span>' : ($info.is_deposit_paid == '否' ? '<span class="layui-badge layui-bg-red">否</span>' : '-')}</td>
+                    <td class="layui-td-gray">投标保证金（元）</td>
+                    <td>¥{$info.tender_deposit|default='0.00'}</td>
+                </tr>
+                <tr>
+                    <td class="layui-td-gray">保证金账户名</td>
+                    <td>{$info.deposit_account_name|default='-'}</td>
+                    <td class="layui-td-gray">保证金开户行</td>
+                    <td>{$info.deposit_bank|default='-'}</td>
+                </tr>
+                <tr>
+                    <td class="layui-td-gray">保证金账号</td>
+                    <td>{$info.deposit_account_no|default='-'}</td>
+                    <td class="layui-td-gray">是否退回保证金</td>
+                    <td>{$info.is_deposit_refunded == '是' ? '<span class="layui-badge layui-bg-green">是</span>' : ($info.is_deposit_refunded == '否' ? '<span class="layui-badge layui-bg-red">否</span>' : '-')}</td>
+                </tr>
+                <tr>
+                    <td class="layui-td-gray">中标结果</td>
+                    <td>{$info.bid_result == '中标' ? '<span class="layui-badge layui-bg-green">中标</span>' : ($info.bid_result == '未中标' ? '<span class="layui-badge layui-bg-red">未中标</span>' : ($info.bid_result ? $info.bid_result : '-'))}</td>
+                    <td class="layui-td-gray">中标服务费（元）</td>
+                    <td>¥{$info.bid_service_fee|default='0.00'}</td>
+                </tr>
+                <tr>
+                    <td class="layui-td-gray">排序</td>
+                    <td>{$info.sort|default='0'}</td>
+                    <td class="layui-td-gray">创建时间</td>
+                    <td>{$info.create_time|default='-'}</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <!-- 附件列表 -->
+            <div class="layui-form-item">
+                <label class="layui-form-label">附件列表</label>
+                <div class="layui-input-block">
+                    {volist name="attachments" id="item"}
+                    <div style="margin-bottom: 8px;">
+                        <a href="{$item.file_path}" download="{$item.file_name}" class="layui-btn layui-btn-sm layui-btn-primary">
+                            {$item.file_name} ({$item.file_size|format_bytes})
+                        </a>
+                    </div>
+                    {/volist}
+                    {empty name="attachments"}
+                    <div style="color: #999;">暂无附件</div>
+                    {/empty}
+                </div>
+            </div>
+
+            <!-- 关闭按钮 -->
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <button type="button" onclick="closeSide()" class="layui-btn layui-btn-default">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{/block}
+
+{block name="script"}
+<script>
+    function closeSide() {
+        if (parent.layui && parent.layui.tool && typeof parent.layui.tool.closeSide === 'function') {
+            parent.layui.tool.closeSide();
+        } else if (parent.layer && typeof parent.layer.closeAll === 'function') {
+            parent.layer.closeAll();
+        } else {
+            let index = parent.layer.getFrameIndex(window.name);
+            if (index !== false) {
+                parent.layer.close(index);
+            }
+        }
+    }
+    function gouguInit() {
+        // 文件大小格式化
+        function formatFileSize(size) {
+            if (!is_numeric(size)) return '0 B';
+            if (size < 1024) return size + ' B';
+            else if (size < 1024*1024) return (size/1024).toFixed(2) + ' KB';
+            else return (size/(1024*1024)).toFixed(2) + ' MB';
+        }
+    }
+</script>
+{/block}
