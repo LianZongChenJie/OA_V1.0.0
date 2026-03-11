@@ -149,6 +149,16 @@
                             <input type="text" name="bid_service_fee" placeholder="请输入中标服务费" class="layui-input" value="{:isset($info['id']) ? $info['bid_service_fee'] : '0.00'}" autocomplete="off">
                         </td>
                     </tr>
+                    <!--<tr>
+                        <td class="layui-td-gray">序列</td>
+                        <td>
+                            <input type="text" name="sort" placeholder="序列" class="layui-input" value="{:isset($info['id']) ? $info['sort'] : '0'}" autocomplete="off">
+                        </td>
+                        <td class="layui-td-gray"></td>
+                        <td>
+
+                        </td>
+                    </tr>-->
                     </tbody>
                 </table>
 
@@ -198,6 +208,7 @@
 
 {block name="script"}
 <script>
+    // 关闭弹窗/侧边栏通用方法
     function closeSide() {
         if (parent.layui && parent.layui.tool && typeof parent.layui.tool.closeSide === 'function') {
             parent.layui.tool.closeSide();
@@ -211,6 +222,7 @@
         }
     }
 
+    // 月份转年月份文本（如15个月 → 1年3个月）
     function convertProjectCycle(months) {
         if (isNaN(months) || months <= 0) {
             return '';
@@ -227,6 +239,7 @@
         return displayText;
     }
 
+    // 年月份文本转回总月数（如1年3个月 → 15）
     function reverseConvertCycle(cycleText) {
         if (!cycleText) return 0;
         let years = 0, months = 0;
@@ -241,14 +254,24 @@
         return years * 12 + months;
     }
 
-    const moduleInit = ['form', 'laydate'];
+    // 文件大小格式化（字节转B/KB/MB）
+    function formatFileSize(size) {
+        size = parseInt(size);
+        if (isNaN(size) || size <= 0) return '0 B';
+        if (size < 1024) return size + ' B';
+        else if (size < 1024*1024) return (size/1024).toFixed(2) + ' KB';
+        else return (size/(1024*1024)).toFixed(2) + ' MB';
+    }
+
+    // 页面初始化方法
     function gouguInit() {
         layui.use(['form', 'layer', 'laydate'], function(){
             var form = layui.form, layer = layui.layer, laydate = layui.laydate;
-            // 修复：改用 ThinkPHP 原生语法计算附件索引，移除不兼容的 default 过滤器
+
+            // 附件索引初始化（编辑页从已有附件数量+1开始）
             let attachIndex = {:isset($info['id']) ? (count($attachments) + 1) : 1};
 
-            // 修复：月份选择器值渲染，兼容 ThinkPHP 模板语法
+            // 初始化月份选择器
             laydate.render({
                 elem: '#monthPicker',
                 type: 'month',
@@ -257,21 +280,14 @@
                 trigger: 'click'
             });
 
-            function formatFileSize(size) {
-                size = parseInt(size);
-                if (isNaN(size) || size <= 0) return '0 B';
-                if (size < 1024) return size + ' B';
-                else if (size < 1024*1024) return (size/1024).toFixed(2) + ' KB';
-                else return (size/(1024*1024)).toFixed(2) + ' MB';
-            }
-
+            // 初始化已有附件的文件大小显示
             $('.file-item-text').each(function() {
                 var size = $(this).data('size');
                 var text = formatFileSize(size);
                 $(this).find('.size-val').text(text);
             });
 
-            // 修复：项目周期回显，改用原生语法渲染变量
+            // 项目周期回显与实时换算
             $(function() {
                 let savedCycleText = "{:isset($info['id']) ? $info['project_cycle'] : ''}";
                 if (savedCycleText) {
@@ -293,7 +309,7 @@
                 });
             });
 
-            // 修复5：上传后清空文件选择框，避免重复上传旧文件
+            // ========== 核心功能：带进度条的文件上传 ==========
             $('#uploadBtn').click(function() {
                 let files = $('#fileInput')[0].files;
                 if (files.length === 0) {
@@ -301,21 +317,56 @@
                     return;
                 }
 
+                // 遍历选中的文件逐个上传
                 for (let i = 0; i < files.length; i++) {
                     let file = files[i];
+                    let fileSizeText = formatFileSize(file.size);
+                    let tempId = 'upload_' + Date.now() + '_' + i; // 唯一标识当前上传项
+
+                    // 1. 添加进度条UI
+                    let progressHtml = `<div id="${tempId}" class="layui-upload-list" style="padding: 8px; border: 1px solid #e6e6e6; margin-bottom: 8px; border-radius: 4px;">
+                        <span>${file.name} (${fileSizeText})</span>
+                        <div class="layui-progress" style="margin-top: 5px; width: 300px;">
+                            <div class="layui-progress-bar layui-bg-blue" lay-percent="0%"></div>
+                        </div>
+                        <span class="progress-text">0%</span>
+                    </div>`;
+                    $('#attachmentList').append(progressHtml);
+                    $('#attachmentList .layui-text-muted').remove();
+                    form.render('progress'); // 渲染进度条组件
+
+                    // 2. 构建上传请求
                     let formData = new FormData();
                     formData.append('file', file);
+                    let xhr = new XMLHttpRequest();
 
-                    $.ajax({
-                        url: "{:url('projecttender/index/uploadAttachment')}",
-                        type: 'POST',
-                        data: formData,
-                        processData: false,
-                        contentType: false,
-                        success: function(res) {
+                    // 3. 监听上传进度
+                    xhr.upload.addEventListener('progress', function(e) {
+                        if (e.lengthComputable) {
+                            let percent = Math.round((e.loaded / e.total) * 100);
+                            // 更新进度条样式和文字
+                            $('#' + tempId + ' .layui-progress-bar')
+                                .attr('lay-percent', percent + '%')
+                                .css('width', percent + '%');
+                            $('#' + tempId + ' .progress-text').text(percent + '%');
+                            form.render('progress');
+                        }
+                    });
+
+                    // 4. 监听上传完成（成功/失败统一处理）
+                    xhr.addEventListener('load', function() {
+                        try {
+                            // 先校验响应格式是否为JSON
+                            let contentType = xhr.getResponseHeader('Content-Type');
+                            if (!contentType || !contentType.includes('application/json')) {
+                                throw new Error('服务器返回非JSON格式响应，可能是后端报错');
+                            }
+
+                            let res = JSON.parse(xhr.responseText);
                             if (res.code === 0) {
+                                // 上传成功：替换进度条为文件信息
                                 let sizeText = formatFileSize(res.data.file_size);
-                                let html = `<div class="layui-upload-list" style="padding: 8px; border: 1px solid #e6e6e6; margin-bottom: 8px; border-radius: 4px;">
+                                let fileHtml = `<div class="layui-upload-list" style="padding: 8px; border: 1px solid #e6e6e6; margin-bottom: 8px; border-radius: 4px;">
                                     <span class="file-item-text" data-size="${res.data.file_size}">${res.data.file_name} (<span class="size-val">${sizeText}</span>)</span>
                                     <a href="${res.data.file_path}" download="${res.data.file_name}" class="layui-btn layui-btn-xs layui-btn-success" style="margin-left: 10px;">下载</a>
                                     <button type="button" class="del-attach layui-btn layui-btn-xs layui-btn-danger" data-has-id="0" style="margin-left: 5px;">删除</button>
@@ -326,27 +377,62 @@
                                     <input type="hidden" name="attachments[${attachIndex}][file_mime]" value="${res.data.file_mime}">
                                     <input type="hidden" name="attachments[${attachIndex}][sort]" value="${res.data.sort}">
                                 </div>`;
-                                $('#attachmentList').append(html);
-                                $('#attachmentList .layui-text-muted').remove();
+                                $('#' + tempId).replaceWith(fileHtml);
                                 attachIndex++;
-                                layer.msg('上传成功！', {icon: 1});
-                                // 清空文件选择框
-                                $('#fileInput').val('');
+                                layer.msg('上传成功：' + res.data.file_name, {icon: 1, time: 1000});
                             } else {
+                                // 业务逻辑失败
+                                $('#' + tempId).html(`<div class="layui-upload-list" style="padding: 8px; border: 1px solid #ff5722; margin-bottom: 8px; border-radius: 4px; color: #ff5722;">
+                                    ${file.name} - 上传失败：${res.msg}
+                                    <button type="button" class="del-attach layui-btn layui-btn-xs layui-btn-danger" style="margin-left: 10px;">移除</button>
+                                </div>`);
                                 layer.msg('上传失败：' + res.msg, {icon: 2});
                             }
-                        },
-                        error: function() {
-                            layer.msg('上传请求失败！', {icon: 2});
+                        } catch (e) {
+                            // 解析失败/后端报错：打印详细日志便于调试
+                            console.error('上传响应解析失败：', e);
+                            console.error('原始响应内容：', xhr.responseText);
+                            $('#' + tempId).html(`<div class="layui-upload-list" style="padding: 8px; border: 1px solid #ff5722; margin-bottom: 8px; border-radius: 4px; color: #ff5722;">
+                                ${file.name} - 上传异常：${e.message}（请查看控制台日志）
+                                <button type="button" class="del-attach layui-btn layui-btn-xs layui-btn-danger" style="margin-left: 10px;">移除</button>
+                            </div>`);
+                            layer.msg('上传解析失败，请检查后端接口', {icon: 2});
                         }
                     });
+
+                    // 5. 监听网络错误
+                    xhr.addEventListener('error', function() {
+                        $('#' + tempId).html(`<div class="layui-upload-list" style="padding: 8px; border: 1px solid #ff5722; margin-bottom: 8px; border-radius: 4px; color: #ff5722;">
+                            ${file.name} - 网络错误，上传失败
+                            <button type="button" class="del-attach layui-btn layui-btn-xs layui-btn-danger" style="margin-left: 10px;">移除</button>
+                        </div>`);
+                        layer.msg('网络错误，上传失败', {icon: 2});
+                    });
+
+                    // 6. 监听上传中止
+                    xhr.addEventListener('abort', function() {
+                        $('#' + tempId).html(`<div class="layui-upload-list" style="padding: 8px; border: 1px solid #ff5722; margin-bottom: 8px; border-radius: 4px; color: #ff5722;">
+                            ${file.name} - 上传已取消
+                            <button type="button" class="del-attach layui-btn layui-btn-xs layui-btn-danger" style="margin-left: 10px;">移除</button>
+                        </div>`);
+                        layer.msg('上传已取消', {icon: 2});
+                    });
+
+                    // 7. 发送上传请求
+                    xhr.open('POST', "{:url('projecttender/index/uploadAttachment')}", true);
+                    xhr.send(formData);
                 }
+
+                // 清空文件选择框，避免重复上传
+                $('#fileInput').val('');
             });
 
+            // ========== 附件删除功能 ==========
             $(document).on('click', '.del-attach', function() {
                 var $item = $(this).closest('.layui-upload-list');
                 var $idInput = $item.find('input[name$="[id]"]');
 
+                // 记录已存在的附件ID（用于后端删除）
                 if ($idInput.length > 0 && $idInput.val()) {
                     var idToDelete = $idInput.val();
                     var $deletedInput = $('input[name="_deleted_attach_ids"]');
@@ -362,31 +448,37 @@
                     }
                 }
 
+                // 移除DOM元素
                 $item.remove();
                 if ($('#attachmentList .layui-upload-list').length === 0) {
                     $('#attachmentList').html('<p class="layui-text-muted">暂无附件</p>');
                 }
             });
 
-            // 修复6：提交后强制清空表单，防止二次提交残留
+            // ========== 表单提交功能 ==========
             $('#submitBtn').click(function() {
+                // 1. 校验必填项
                 let requiredFields = ['month', 'tender_leader', 'customer_name', 'project_name', 'is_tender_submitted'];
-                for (let i = 0; i < requiredFields.length; i++) {
-                    let field = requiredFields[i];
+                let fieldNames = {
+                    'month': '月份',
+                    'tender_leader': '标书负责人',
+                    'customer_name': '客户名称',
+                    'project_name': '项目名称',
+                    'is_tender_submitted': '是否投标'
+                };
+
+                for (let field of requiredFields) {
                     let $input = $('input[name="' + field + '"]');
                     let $select = $('select[name="' + field + '"]');
                     let val = ($input.val() || $select.val() || '').trim();
 
                     if (!val) {
-                        let fieldName = {
-                            'month': '月份', 'tender_leader': '标书负责人', 'customer_name': '客户名称',
-                            'project_name': '项目名称', 'is_tender_submitted': '是否投标'
-                        }[field];
-                        layer.msg('请填写必填项：' + fieldName, {icon: 2});
+                        layer.msg('请填写必填项：' + fieldNames[field], {icon: 2});
                         return;
                     }
                 }
 
+                // 2. 提交表单
                 let formData = new FormData($('#tenderForm')[0]);
 
                 $.ajax({
@@ -400,13 +492,15 @@
                         if (res.code === 0) {
                             layer.msg(res.msg, {icon: 1});
                             setTimeout(function(){
+                                // 刷新父页面表格
                                 if (parent.window.refreshProjectTenderTable) {
                                     parent.window.refreshProjectTenderTable();
                                 } else if(parent.layui && parent.layui.pageTable) {
                                     parent.layui.pageTable.reload();
                                 }
+                                // 关闭弹窗
                                 closeSide();
-                                // 强制清空表单
+                                // 清空表单
                                 $('#tenderForm')[0].reset();
                                 form.render();
                             }, 1000);
@@ -415,15 +509,20 @@
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error('请求失败:', error);
+                        console.error('表单提交失败:', error);
                         layer.msg('提交请求失败：' + error, {icon: 2});
                     }
                 });
             });
 
-            // 修复7：初始化时强制渲染表单，覆盖旧 DOM 数值
+            // 强制渲染表单，确保样式生效
             form.render();
         });
     }
+
+    // 页面加载完成后执行初始化
+    $(function() {
+        gouguInit();
+    });
 </script>
 {/block}

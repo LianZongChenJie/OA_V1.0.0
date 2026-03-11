@@ -6,6 +6,7 @@ use think\facade\View;
 use think\facade\Request;
 use think\Request as RequestInstance;
 use app\projecttender\model\ProjectTenderAttachment;
+use think\facade\Db;
 
 
 
@@ -21,6 +22,7 @@ class Index extends BaseController
     // 替代 DB 门面的写法（推荐）
     public function datalist()
     {
+        // 调试信息写入日志，不影响前端响应
         if (Request::isAjax()) {
             $page  = Request::param('page', 1, 'intval');
             $limit = Request::param('limit', 10, 'intval');
@@ -31,6 +33,8 @@ class Index extends BaseController
 
             // 搜索条件
             $searchWhere = [];
+
+            // 原有筛选条件
             $projectName = trim(Request::param('project_name', ''));
             if (!empty($projectName)) {
                 $searchWhere[] = ['project_name', 'like', "%{$projectName}%"];
@@ -44,13 +48,36 @@ class Index extends BaseController
                 $searchWhere[] = ['tender_agency', 'like', "%{$tenderAgency}%"];
             }
 
+            // 新增筛选条件1：开标日期（起止时间）
+            $bidOpeningDateStart = trim(Request::param('bid_opening_date_start', ''));
+            if (!empty($bidOpeningDateStart)) {
+                $searchWhere[] = ['bid_opening_date', '>=', $bidOpeningDateStart];
+            }
+            $bidOpeningDateEnd = trim(Request::param('bid_opening_date_end', ''));
+            if (!empty($bidOpeningDateEnd)) {
+                // 结束日期加一天，确保包含当天的数据
+                $searchWhere[] = ['bid_opening_date', '<=', date('Y-m-d', strtotime($bidOpeningDateEnd . ' +1 day'))];
+            }
+
+            // 新增筛选条件2：是否投标
+            $isTenderSubmitted = trim(Request::param('is_tender_submitted', ''));
+            if (!empty($isTenderSubmitted) && in_array($isTenderSubmitted, ['是', '否'])) {
+                $searchWhere[] = ['is_tender_submitted', '=', $isTenderSubmitted];
+            }
+
+            // 新增筛选条件3：中标结果
+            $bidResult = trim(Request::param('bid_result', ''));
+            if (!empty($bidResult) && in_array($bidResult, ['中标', '未中标', '待开标'])) {
+                $searchWhere[] = ['bid_result', '=', $bidResult];
+            }
+
             // 【终极修复1】每次查询都新建模型实例，彻底隔离上下文
             // 1. 列表数据
             $listModel = new \app\projecttender\model\ProjectTender();
             $list = $listModel
                 ->where($searchWhere)
                 ->limit($offset, $limit)
-                ->order('id desc')
+                ->order('bid_opening_date asc')
                 ->select()
                 ->toArray();
 
@@ -636,6 +663,268 @@ class Index extends BaseController
             \think\facade\Log::error('【投标保存】异常：' . $e->getMessage() . ' | ' . $e->getTraceAsString());
             return json(['code' => 1, 'msg' => '操作失败：' . $e->getMessage(), 'data' => []]);
         }
+    }
+
+
+
+
+    /**
+     * 下载Excel导入模板
+     */
+    public function exportTemplate()
+    {
+        try {
+            // 创建新的Excel对象 - 修复：使用完整命名空间
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+
+            // 设置工作表名称
+            $sheet->setTitle('项目投标信息模板');
+
+            // 定义表头
+            $headers = [
+                '月份', '标书负责人', '购买日期(yyyy-mm-dd)', '客户名称', '项目名称',
+                '招标机构', '项目周期', '入围家数', '预算金额（元）', '开标日期(yyyy-mm-dd)',
+                '是否投标(是/否)', '未投原因', '标书款（元）', '标书款发票(是/否)',
+                '是否缴纳保证金(是/否)', '投标保证金（元）', '保证金账户名', '保证金开户行',
+                '保证金账号', '是否退回保证金(是/否)', '中标结果(中标/未中标/待开标)', '中标服务费（元）'
+            ];
+
+            // 设置表头
+            $col = 'A';
+            foreach ($headers as $header) {
+                $sheet->setCellValue($col . '1', $header);
+                // 设置表头样式
+                $sheet->getStyle($col . '1')->getFont()->setBold(true);
+                $sheet->getColumnDimension($col)->setWidth(20);
+                $col++;
+            }
+
+            // 添加示例数据行
+            $exampleData = [
+                '2024-01', '张三', '2024-01-05', '测试客户', '测试项目',
+                '测试招标机构', '6个月', '5', '100000.00', '2024-02-01',
+                '是', '', '500.00', '是',
+                '是', '50000.00', '张三', '中国工商银行',
+                '622208XXXXXXXXXXXX', '否', '待开标', '0.00'
+            ];
+
+            $col = 'A';
+            foreach ($exampleData as $value) {
+                $sheet->setCellValue($col . '2', $value);
+                $col++;
+            }
+
+            // 下载文件
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="项目投标信息导入模板.xlsx"');
+            header('Cache-Control: max-age=0');
+            header('Pragma: public'); // 修复IE浏览器下载问题
+            header('Expires: 0');
+
+            // 修复：使用完整命名空间创建Writer对象
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+            exit;
+        } catch (\Exception $e) {
+            // 友好的错误提示
+            return json(['code' => 1, 'msg' => '模板下载失败：' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * 导入Excel数据
+     */
+    /**
+     * 导入Excel数据
+     */
+    public function importExcel()
+    {
+        try {
+            // 检查是否有文件上传
+            $file = Request::file('file');
+            if (!$file) {
+                return json(['code' => 1, 'msg' => '请选择要导入的Excel文件']);
+            }
+
+            // 验证文件类型 - 修复：从原始文件名中提取扩展名
+            $originalName = $file->getOriginalName(); // 获取原始文件名
+            $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION)); // 从原始文件名解析扩展名
+
+            // 兼容.xls和.xlsx格式
+            if (!in_array($ext, ['xlsx', 'xls'])) {
+                return json(['code' => 1, 'msg' => '请选择Excel格式的文件（.xlsx/.xls），当前文件格式：.' . $ext]);
+            }
+
+            // 读取Excel文件 - 使用完整命名空间
+            $filePath = $file->getRealPath(); // 获取临时文件路径
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($filePath);
+            $sheet = $spreadsheet->getActiveSheet();
+            $highestRow = $sheet->getHighestRow(); // 获取总行数
+            $highestColumn = $sheet->getHighestColumn(); // 获取总列数
+
+            // 验证表头
+            $headers = [
+                'A' => '月份', 'B' => '标书负责人', 'C' => '购买日期(yyyy-mm-dd)', 'D' => '客户名称',
+                'E' => '项目名称', 'F' => '招标机构', 'G' => '项目周期', 'H' => '入围家数',
+                'I' => '预算金额（元）', 'J' => '开标日期(yyyy-mm-dd)', 'K' => '是否投标(是/否)',
+                'L' => '未投原因', 'M' => '标书款（元）', 'N' => '标书款发票(是/否)',
+                'O' => '是否缴纳保证金(是/否)', 'P' => '投标保证金（元）', 'Q' => '保证金账户名',
+                'R' => '保证金开户行', 'S' => '保证金账号', 'T' => '是否退回保证金(是/否)',
+                'U' => '中标结果(中标/未中标/待开标)', 'V' => '中标服务费（元）'
+            ];
+
+            // 验证表头是否正确
+            foreach ($headers as $col => $header) {
+                $cellValue = $sheet->getCell($col . '1')->getValue();
+                $cellValue = $cellValue ?? ''; // 先处理null
+                $cellValue = trim($cellValue);
+                if ($cellValue !== $header) {
+                    return json(['code' => 1, 'msg' => 'Excel模板格式错误，第'.$col.'列应为：'.$header.'，实际为：'.$cellValue]);
+                }
+            }
+
+            // 开始导入数据
+            $successCount = 0;
+            $errorMsg = '';
+
+            // 开启事务（现在Db已导入，可正常使用）
+            Db::startTrans();
+
+            try {
+                // 从第二行开始读取数据（跳过表头）
+                for ($row = 2; $row <= $highestRow; $row++) {
+                    // 跳过空行
+                    $projectNameCell = $sheet->getCell('E' . $row)->getValue();
+                    $projectName = trim($projectNameCell ?? ''); // 先处理null再trim
+                    if (empty($projectName)) {
+                        continue; // 跳过空行，不报错
+                    }
+
+                    // 读取一行数据
+                    $data = [
+                        'month' => trim($sheet->getCell('A' . $row)->getValue() ?? ''),
+                        'tender_leader' => trim($sheet->getCell('B' . $row)->getValue() ?? ''),
+                        'purchase_date' => $this->formatDate(trim($sheet->getCell('C' . $row)->getValue() ?? '')),
+                        'customer_name' => trim($sheet->getCell('D' . $row)->getValue() ?? ''),
+                        'project_name' => $projectName,
+                        'tender_agency' => trim($sheet->getCell('F' . $row)->getValue() ?? ''),
+                        'project_cycle' => trim($sheet->getCell('G' . $row)->getValue() ?? ''),
+                        'shortlisted_countries' => $this->formatInt(trim($sheet->getCell('H' . $row)->getValue() ?? '')),
+                        'budget_amount' => $this->formatFloat(trim($sheet->getCell('I' . $row)->getValue() ?? '')),
+                        'bid_opening_date' => $this->formatDate(trim($sheet->getCell('J' . $row)->getValue() ?? '')),
+                        'is_tender_submitted' => $this->formatEnum(trim($sheet->getCell('K' . $row)->getValue() ?? '')),
+                        'non_tender_reason' => trim($sheet->getCell('L' . $row)->getValue() ?? ''),
+                        'tender_document_fee' => $this->formatFloat(trim($sheet->getCell('M' . $row)->getValue() ?? '')),
+                        'has_tender_invoice' => $this->formatEnum(trim($sheet->getCell('N' . $row)->getValue() ?? '')),
+                        'is_deposit_paid' => $this->formatEnum(trim($sheet->getCell('O' . $row)->getValue() ?? '')),
+                        'tender_deposit' => $this->formatFloat(trim($sheet->getCell('P' . $row)->getValue() ?? '')),
+                        'deposit_account_name' => trim($sheet->getCell('Q' . $row)->getValue() ?? ''),
+                        'deposit_bank' => trim($sheet->getCell('R' . $row)->getValue() ?? ''),
+                        'deposit_account_no' => trim($sheet->getCell('S' . $row)->getValue() ?? ''),
+                        'is_deposit_refunded' => $this->formatEnum(trim($sheet->getCell('T' . $row)->getValue() ?? '')),
+                        'bid_result' => $this->formatBidResult(trim($sheet->getCell('U' . $row)->getValue() ?? '')),
+                        'bid_service_fee' => $this->formatFloat(trim($sheet->getCell('V' . $row)->getValue() ?? '')),
+                        'create_time' => date('Y-m-d H:i:s'),
+                        'update_time' => date('Y-m-d H:i:s'),
+                        'delete_time' => 0,
+                        'sort' => 0
+                    ];
+
+                    // 插入数据（Db已导入，可正常使用）
+                    $result = Db::name('project_tender')->insert($data);
+                    if ($result) {
+                        $successCount++;
+                    }
+                }
+
+                // 提交事务
+                Db::commit();
+
+                return json([
+                    'code' => 0,
+                    'msg' => '导入成功，共导入 '.$successCount.' 条有效数据',
+                    'data' => ['success_count' => $successCount]
+                ]);
+
+            } catch (\Exception $e) {
+                // 回滚事务
+                Db::rollback();
+                return json(['code' => 1, 'msg' => '导入失败：' . $e->getMessage()]);
+            }
+
+        } catch (\Exception $e) {
+            return json(['code' => 1, 'msg' => '导入异常：' . $e->getMessage()]);
+        }
+    }
+
+// 同时修复formatDate方法中的Excel日期转换
+    private function formatDate($value)
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        // 处理Excel日期格式 - 修复：使用完整命名空间
+        if (is_numeric($value)) {
+            $value = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value)->format('Y-m-d');
+        }
+
+        // 验证日期格式
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return $value;
+        }
+
+        return null;
+    }
+    /**
+     * 格式化数字
+     */
+    private function formatFloat($value)
+    {
+        if (empty($value) || $value === '-') {
+            return 0.00;
+        }
+
+        return (float)$value;
+    }
+
+    /**
+     * 格式化整数
+     */
+    private function formatInt($value)
+    {
+        if (empty($value) || $value === '-') {
+            return 0;
+        }
+
+        return (int)$value;
+    }
+
+    /**
+     * 格式化枚举值（是/否）
+     */
+    private function formatEnum($value)
+    {
+        $value = trim($value);
+        if (in_array($value, ['是', '否'])) {
+            return $value;
+        }
+
+        return null;
+    }
+
+    /**
+     * 格式化中标结果
+     */
+    private function formatBidResult($value)
+    {
+        $value = trim($value);
+        if (in_array($value, ['中标', '未中标', '待开标'])) {
+            return $value;
+        }
+
+        return null;
     }
 
 }

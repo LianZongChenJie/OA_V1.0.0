@@ -1,0 +1,177 @@
+{extend name="../../base/view/common/base" /}
+<!-- 主体 -->
+{block name="body"}
+<div class="p-page">
+	<!-- 搜索栏与新增按钮同行布局 -->
+	<div class="layui-form gg-search-form" lay-filter="searchForm" style="margin-bottom: 10px;">
+		<div class="layui-form-item" style="margin-bottom: 0;">
+			<div class="layui-inline">
+				<label class="layui-form-label" style="width: auto; padding-right: 10px;">网址</label>
+				<div class="layui-input-inline" style="width: 200px;">
+					<input type="text" name="website_url" placeholder="请输入网址关键词搜索" class="layui-input">
+				</div>
+			</div>
+			<div class="layui-inline">
+				<button class="layui-btn layui-btn-normal" lay-submit lay-filter="doSearch">搜索</button>
+				<button class="layui-btn layui-btn-primary" type="reset">重置</button>
+			</div>
+			<div class="layui-inline" style="float: right;">
+				<button class="layui-btn layui-btn-sm tool-add" type="button" data-href="/projecttender/websiteaccount/add">+ 添加招投标网址注册信息</button>
+			</div>
+		</div>
+	</div>
+
+	<table class="layui-hide" id="table_oa_website_account" lay-filter="table_oa_website_account"></table>
+</div>
+{/block}
+<!-- /主体 -->
+
+<!-- 脚本 -->
+{block name="script"}
+<script>
+	const moduleInit = ['tool'];
+	function gouguInit() {
+		// 加载layui核心模块
+		var table = layui.table,
+				form = layui.form,
+				tool = layui.tool,
+				layer = layui.layer,
+				$ = layui.$; // 显式声明jQuery，避免未定义
+
+		// 渲染表格（使用标准table组件，弃用treeTable）
+		layui.pageTable = table.render({
+			elem: "#table_oa_website_account",
+			title: '招投标网址注册信息列表',
+			url: "/projecttender/websiteaccount/datalist", // 正确的接口地址
+			method: 'post', // 统一使用post请求
+			page: true, // 开启分页
+			limit: 10, // 每页默认10条
+			limits: [10, 20, 50], // 分页条数选择
+			where: {
+				website_url: $.trim($('input[name="website_url"]').val()) // 初始化搜索参数并去除空格
+			},
+			cols: [[
+				{field: 'id', width: 80, title: 'ID号', align: 'center', fixed: 'left'},
+				{field: 'sort', width: 80, title: '排序', align: 'center'},
+				{field: 'website_name', minWidth: 200, title: '网站名称'},
+				{field: 'website_url', minWidth: 300, title: '网址', templet: function(d) {
+						// 网址渲染为可点击链接，兼容空值和非法链接
+						if (!d.website_url) return '-';
+						// 补全网址前缀，避免链接失效
+						let url = d.website_url;
+						if (!/^http(s)?:\/\//.test(url)) {
+							url = 'http://' + url;
+						}
+						return `<a href="${url}" target="_blank" class="layui-blue">${d.website_url}</a>`;
+					}},
+				{field: 'username', width: 120, title: '用户名', align: 'center'},
+				{field: 'password', width: 180, title: '密码', align: 'center'},
+				{field: 'has_uk', width: 100, title: '是否有UK', align: 'center', templet: function(d) {
+						// 格式化是否有UK的显示，统一显示样式
+						if (!d.has_uk) return '-';
+						return d.has_uk === '是' ? '<span style="color:#52c41a;">是</span>' : '<span style="color:#f5222d;">否</span>';
+					}},
+				{field: 'remark', minWidth: 200, title: '说明', templet: function(d) {
+						// 说明字段为空时显示-
+						return d.remark ? d.remark : '-';
+					}},
+				{width: 120, title: '操作', align: 'center', fixed: 'right', templet: function(d) {
+						var btn1 = '<button class="layui-btn layui-bg-blue layui-btn-xs" lay-event="edit">编辑</button>';
+						var btn4 = '<button class="layui-btn layui-bg-red layui-btn-xs" lay-event="del">删除</button>';
+						return `<div class="layui-btn-group">${btn1}${btn4}</div>`;
+					}}
+			]],
+			done: function(res, curr, count) {
+				// 表格渲染完成回调
+				// 处理接口异常情况
+				if (res.code && res.code !== 0) {
+					layer.msg(res.msg || '数据加载失败', {icon: 2, time: 2000});
+					return;
+				}
+
+				// 无数据时提示
+				if (count === 0) {
+					layer.msg('暂无招投标网址注册信息', {icon: 6, time: 1500});
+				}
+			}
+		});
+
+		// 监听搜索表单提交
+		form.on('submit(doSearch)', function(data) {
+			// 重载表格，携带搜索参数并重置页码
+			table.reload('table_oa_website_account', {
+				page: { curr: 1 },
+				where: {
+					website_url: $.trim(data.field.website_url) // 去除首尾空格
+				}
+			});
+			return false; // 阻止表单默认提交
+		});
+
+		// 监听重置按钮
+		$('button[type="reset"]').click(function() {
+			// 清空搜索框并重载表格
+			$('input[name="website_url"]').val('');
+			table.reload('table_oa_website_account', {
+				page: { curr: 1 },
+				where: { website_url: '' }
+			});
+			// 阻止默认重置行为（避免form自带的reset触发额外操作）
+			return false;
+		});
+
+		// 监听表格工具条事件
+		table.on('tool(table_oa_website_account)', function(obj) {
+			var data = obj.data; // 当前行数据
+			if (obj.event === 'edit') {
+				// 编辑操作：打开侧边弹窗
+				tool.side("/projecttender/websiteaccount/add?id=" + data.id, {
+					// 侧边弹窗配置
+					title: '编辑招投标网址信息',
+					width: '800px'
+				}, function() {
+					// 弹窗关闭后的回调：刷新表格
+					layui.pageTable.reload();
+				});
+			} else if (obj.event === 'del') {
+				// 删除操作：确认弹窗
+				layer.confirm('确定要删除这条招投标网址信息吗？删除后不可恢复！', {
+					icon: 3,
+					title: '删除确认',
+					btn: ['确认', '取消']
+				}, function(index) {
+					// 显示加载层
+					var loadIndex = layer.load(2);
+
+					// 确认删除
+					let callback = function(e) {
+						layer.close(loadIndex); // 关闭加载层
+						layer.msg(e.msg, {icon: e.code === 0 ? 1 : 2, time: 2000});
+						if (e.code == 0) {
+							// 删除成功后刷新表格
+							layui.pageTable.reload();
+						}
+					};
+
+					// 调用删除接口
+					tool.delete("/projecttender/websiteaccount/del", {id: data.id}, callback);
+					layer.close(index);
+				});
+			}
+		});
+
+		// 监听添加按钮（兼容工具类的side方法）
+		$('.tool-add').click(function() {
+			var href = $(this).data('href');
+			tool.side(href, {
+				title: '添加招投标网址注册信息',
+				width: '800px'
+			}, function() {
+				// 弹窗关闭后刷新表格
+				layui.pageTable.reload();
+			});
+		});
+	}
+</script>
+{/block}
+<!-- /脚本 -->

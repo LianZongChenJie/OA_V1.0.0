@@ -2,31 +2,75 @@
 {block name="body"}
 <div class="p-page">
 	<!-- 搜索表单 -->
-	<div class="layui-form gg-form-bar border-t border-x" lay-filter="searchForm" style="padding: 15px 15px; margin-bottom: 10px; display: flex; align-items: center; flex-wrap: wrap;">
-		<div class="layui-form-item layui-inline" style="margin-bottom: 0; display: flex; align-items: center;">
-			<label class="layui-form-label" style="width: auto; padding-right: 8px;">项目名称</label>
-			<div class="layui-input-inline" style="width: 180px; margin-right: 10px;">
-				<input type="text" name="project_name" placeholder="请输入项目名称" class="layui-input">
+	<div class="layui-form gg-form-bar border-t border-x" lay-filter="searchForm" style="padding: 15px; margin-bottom: 10px; background: #fff; border-radius: 4px;">
+		<div class="layui-row layui-col-space15">
+			<!-- 第一行：项目名称、标书负责人、招标机构、开标日期 -->
+			<div class="layui-col-xs12 layui-col-sm12 layui-col-md12" style="margin-bottom: 10px;">
+				<div class="layui-form-item" style="margin-bottom: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 15px;">
+					<label class="layui-form-label" style="width: 90px; text-align: right; padding-right: 10px; margin: 0;">项目名称</label>
+					<div class="layui-input-inline" style="width: 160px; margin: 0;">
+						<input type="text" name="project_name" placeholder="请输入项目名称" class="layui-input">
+					</div>
+
+					<label class="layui-form-label" style="width: 90px; text-align: right; padding-right: 10px; margin: 0;">标书负责人</label>
+					<div class="layui-input-inline" style="width: 140px; margin: 0;">
+						<input type="text" name="tender_leader" placeholder="请输入负责人" class="layui-input">
+					</div>
+
+					<label class="layui-form-label" style="width: 90px; text-align: right; padding-right: 10px; margin: 0;">招标机构</label>
+					<div class="layui-input-inline" style="width: 160px; margin: 0;">
+						<input type="text" name="tender_agency" placeholder="请输入招标机构" class="layui-input">
+					</div>
+
+					<label class="layui-form-label" style="width: 90px; text-align: right; padding-right: 10px; margin: 0;">中标结果</label>
+					<div class="layui-input-inline" style="width: 140px; margin: 0;">
+						<select name="bid_result" lay-verify="" lay-search>
+							<option value="">全部</option>
+							<option value="中标">中标</option>
+							<option value="未中标">未中标</option>
+							<option value="待开标">待开标</option>
+						</select>
+					</div>
+
+				</div>
 			</div>
-		</div>
-		<div class="layui-form-item layui-inline" style="margin-bottom: 0; display: flex; align-items: center;">
-			<label class="layui-form-label" style="width: auto; padding-right: 8px;">标书负责人</label>
-			<div class="layui-input-inline" style="width: 150px; margin-right: 10px;">
-				<input type="text" name="tender_leader" placeholder="请输入负责人" class="layui-input">
+
+			<!-- 第二行：是否投标、中标结果、操作按钮 -->
+			<div class="layui-col-xs12 layui-col-sm12 layui-col-md12">
+				<div class="layui-form-item" style="margin-bottom: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 15px; justify-content: space-between;">
+					<div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+
+						<label class="layui-form-label" style="width: 90px; text-align: right; padding-right: 10px; margin: 0;">开标日期</label>
+						<div class="layui-input-inline" style="width: 140px; margin: 0;">
+							<input type="text" name="bid_opening_date_start" placeholder="开始日期" class="layui-input" id="bid_opening_date_start">
+						</div>
+						<div class="layui-form-mid" style="margin: 0 8px;">-</div>
+						<div class="layui-input-inline" style="width: 140px; margin: 0;">
+							<input type="text" name="bid_opening_date_end" placeholder="结束日期" class="layui-input" id="bid_opening_date_end">
+						</div>
+
+						<label class="layui-form-label" style="width: 90px; text-align: right; padding-right: 10px; margin: 0;">是否投标</label>
+						<div class="layui-input-inline" style="width: 140px; margin: 0;">
+							<select name="is_tender_submitted" lay-verify="" lay-search>
+								<option value="">全部</option>
+								<option value="是">是</option>
+								<option value="否">否</option>
+							</select>
+						</div>
+
+
+					</div>
+
+					<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+						<button class="layui-btn layui-btn-sm layui-btn-primary" lay-submit lay-filter="resetSearch">重置</button>
+						<button class="layui-btn layui-btn-sm" lay-submit lay-filter="doSearch">搜索</button>
+						<button class="layui-btn layui-btn-sm layui-btn-normal tool-import" type="button">
+							<i class="layui-icon">&#xe67c;</i> 导入Excel
+						</button>
+						<button class="layui-btn layui-btn-sm tool-add" type="button" data-href="/projecttender/index/add">+ 添加项目投标信息</button>
+					</div>
+				</div>
 			</div>
-		</div>
-		<div class="layui-form-item layui-inline" style="margin-bottom: 0; display: flex; align-items: center;">
-			<label class="layui-form-label" style="width: auto; padding-right: 8px;">招标机构</label>
-			<div class="layui-input-inline" style="width: 180px; margin-right: 10px;">
-				<input type="text" name="tender_agency" placeholder="请输入招标机构" class="layui-input">
-			</div>
-		</div>
-		<div class="layui-form-item layui-inline" style="margin-bottom: 7px;display: flex;align-items: center;margin-left: 23px;">
-			<button class="layui-btn layui-btn-sm layui-btn-primary" lay-submit lay-filter="resetSearch" style="margin-right: 8px;">重置</button>
-			<button class="layui-btn layui-btn-sm" lay-submit lay-filter="doSearch">搜索</button>
-		</div>
-		<div class="layui-form-item layui-inline" style="margin-left: auto; margin-bottom: 0;">
-			<button class="layui-btn layui-btn-sm tool-add" type="button" data-href="/projecttender/index/add">+ 添加项目投标信息</button>
 		</div>
 	</div>
 
@@ -37,7 +81,35 @@
 	<div id="external-page-bar" style="text-align: right; padding: 15px 0; min-height: 40px;"></div>
 </div>
 
-<!-- 彻底隐藏内置分页 -->
+<!-- Excel导入弹窗 -->
+<div id="importExcelModal" style="display: none; padding: 20px;">
+	<div class="layui-form-item">
+		<label class="layui-form-label">下载模板</label>
+		<div class="layui-input-block">
+			<a href="/projecttender/index/exportTemplate" class="layui-btn layui-btn-primary layui-btn-sm">
+				<i class="layui-icon">&#xe601;</i> 下载Excel模板
+			</a>
+			<div class="layui-form-mid layui-word-aux" style="margin-top: 10px;">
+				请先下载模板，按照模板格式填写数据后再导入
+			</div>
+		</div>
+	</div>
+	<hr>
+	<div class="layui-form-item">
+		<label class="layui-form-label">选择文件</label>
+		<div class="layui-input-block">
+			<button type="button" class="layui-btn layui-btn-sm" id="importFileBtn">
+				<i class="layui-icon">&#xe67c;</i> 选择Excel文件
+			</button>
+			<div class="layui-upload-list" style="margin-top: 10px;">
+				<p id="uploadFileName" style="color: #666;"></p>
+			</div>
+		</div>
+	</div>
+	<input type="file" id="importFile" accept=".xlsx,.xls" style="display: none;">
+</div>
+
+<!-- 彻底隐藏内置分页 + 表格行背景色样式 -->
 <style>
 	.layui-table-view .layui-table-page,
 	.layui-table-box .layui-table-page,
@@ -50,12 +122,41 @@
 		margin: 0 !important;
 		padding: 0 !important;
 	}
+
+	/* 投标-中标：红色背景 + 字体默认颜色 */
+	.table-row-tender-yes-win {
+		background-color: #fff2f0 !important;
+		color: #333 !important; /* 明确字体颜色，避免继承问题 */
+	}
+
+	/* 投标-未中标/待开标：无背景色 + 字体默认颜色 */
+	.table-row-tender-yes-lose {
+		background-color: transparent !important; /* 明确无背景 */
+		color: #333 !important; /* 明确字体颜色 */
+	}
+
+	/* 不投标：绿色背景 + 红色字体 */
+	.table-row-tender-no {
+		background-color: #b2f0e8 !important;
+		color: #f5222d !important; /* 明确红色字体 */
+	}
+
+	/* 鼠标悬浮样式保持一致 */
+	.table-row-tender-yes-win:hover {
+		background-color: #fff1f0 !important;
+	}
+	.table-row-tender-yes-lose:hover {
+		background-color: #f6f6f6 !important; /* 增加悬浮效果，提升体验 */
+	}
+	.table-row-tender-no:hover {
+		background-color: #e6f7ff !important;
+	}
 </style>
 {/block}
 
 {block name="script"}
 <script>
-	const moduleInit = ['tool'];
+	const moduleInit = ['tool', 'laydate', 'upload']; // 新增upload模块
 
 	function gouguInit() {
 		var table = layui.table,
@@ -63,6 +164,8 @@
 				layer = layui.layer,
 				tool = layui.tool,
 				laypage = layui.laypage,
+				laydate = layui.laydate,
+				upload = layui.upload,
 				$ = layui.$;
 
 		// 全局状态
@@ -73,6 +176,100 @@
 			where: {}
 		};
 
+		// 初始化日期选择器（开标日期起止时间）
+		laydate.render({
+			elem: '#bid_opening_date_start',
+			type: 'date',
+			range: false,
+			format: 'yyyy-MM-dd'
+		});
+		laydate.render({
+			elem: '#bid_opening_date_end',
+			type: 'date',
+			range: false,
+			format: 'yyyy-MM-dd'
+		});
+
+		// ========== 新增：Excel导入功能 ==========
+		// 导入按钮点击事件
+		$('.tool-import').click(function() {
+			layer.open({
+				type: 1,
+				title: 'Excel导入',
+				area: ['500px', '300px'],
+				content: $('#importExcelModal'),
+				btn: ['确认导入', '取消'],
+				success: function(layero, index) {
+					// 重置文件选择
+					$('#importFile').val('');
+					$('#uploadFileName').text('');
+				},
+				yes: function(index, layero) {
+					var file = $('#importFile')[0].files[0];
+					if (!file) {
+						layer.msg('请选择要导入的Excel文件', {icon: 2});
+						return;
+					}
+
+					// 验证文件类型
+					var fileName = file.name;
+					var ext = fileName.substring(fileName.lastIndexOf('.')).toLowerCase();
+					if (ext !== '.xlsx' && ext !== '.xls') {
+						layer.msg('请选择Excel格式的文件（.xlsx/.xls）', {icon: 2});
+						return;
+					}
+
+					// 构建FormData
+					var formData = new FormData();
+					formData.append('file', file);
+
+					// 显示加载层
+					var loadIndex = layer.load(2);
+
+					// 提交导入请求
+					$.ajax({
+						url: '/projecttender/index/importExcel',
+						type: 'POST',
+						data: formData,
+						contentType: false,
+						processData: false,
+						dataType: 'json',
+						success: function(res) {
+							layer.close(loadIndex);
+							if (res.code === 0) {
+								layer.msg(res.msg, {icon: 1});
+								layer.close(index);
+								// 刷新表格
+								refreshProjectTenderTable();
+							} else {
+								layer.msg(res.msg, {icon: 2});
+							}
+						},
+						error: function() {
+							layer.close(loadIndex);
+							layer.msg('导入失败，请重试', {icon: 2});
+						}
+					});
+				}
+			});
+		});
+
+		// 文件选择按钮
+		$('#importFileBtn').click(function() {
+			$('#importFile').click();
+		});
+
+		// 文件选择事件
+		$('#importFile').change(function() {
+			var file = this.files[0];
+			if (file) {
+				$('#uploadFileName').text('已选择：' + file.name);
+			} else {
+				$('#uploadFileName').text('');
+			}
+		});
+		// ========== Excel导入功能结束 ==========
+
 		// 初始化表格
 		var tableIns = table.render({
 			elem: '#table_project_tender',
@@ -81,8 +278,33 @@
 			page: true,
 			limits: [10, 20, 50],
 			where: state.where,
+			// 核心修复：在数据解析阶段手动添加rowIndex，避免done里reload导致循环
+			parseData: function(res) {
+				if (res.code === 0 && res.data) {
+					// 给当前页的每一行数据添加rowIndex（从0开始）
+					for (var i = 0; i < res.data.length; i++) {
+						res.data[i].rowIndex = i;
+					}
+				}
+				return {
+					code: res.code,
+					msg: res.msg,
+					count: res.count,
+					data: res.data
+				};
+			},
 			cols: [[
-				{field:'id', width:80, title: '主键 ID', align:'center'},
+				// 序号列：使用parseData阶段添加的rowIndex计算
+				{
+					width: 80,
+					title: '序号',
+					align: 'center',
+					templet: function(d) {
+						var page = state.page || 1;
+						var limit = state.limit || 10;
+						return (page - 1) * limit + d.rowIndex + 1;
+					}
+				},
 				{field:'month', width:100, title: '月份', align:'center'},
 				{field:'tender_leader', width:120, title: '标书负责人', align:'center'},
 				{field:'purchase_date', width:120, title: '购买日期', align:'center', templet: d => d.purchase_date || '-'},
@@ -94,7 +316,7 @@
 				{field:'budget_amount', width:120, title: '预算金额（元）', align:'right', templet: d => `¥${d.budget_amount ? parseFloat(d.budget_amount).toFixed(2) : '0.00'}`},
 				{field:'bid_opening_date', width:120, title: '开标日期', align:'center', templet: d => d.bid_opening_date || '-'},
 				{field:'is_tender_submitted', width:100, title: '是否投标', align:'center', templet: d => {
-						return d.is_tender_submitted ? (d.is_tender_submitted == '是' ? '<span style="color:#52c41a;">是</span>' : '<span style="color:#f5222d;">否</span>') : '-';
+						return d.is_tender_submitted ? (d.is_tender_submitted == '是' ? '<span style="color:#f5222d;">是</span>' : '<span style="color:#52c41a;">否</span>') : '-';
 					}},
 				{field:'non_tender_reason', width:180, title: '未投原因'},
 				{field:'tender_document_fee', width:120, title: '标书款（元）', align:'right', templet: d => `¥${d.tender_document_fee ? parseFloat(d.tender_document_fee).toFixed(2) : '0.00'}`},
@@ -122,9 +344,9 @@
 				{field:'update_time', width:180, title: '更新时间', align:'center'},
 				{width:192, title: '操作', align:'center', templet: d => {
 						return `<div class="layui-btn-group">
-							<button class="layui-btn layui-bg-blue layui-btn-xs" lay-event="edit">编辑</button>
-							<button class="layui-btn layui-bg-red layui-btn-xs" lay-event="del">删除</button>
-						</div>`;
+						<button class="layui-btn layui-bg-blue layui-btn-xs" lay-event="edit">编辑</button>
+						<button class="layui-btn layui-bg-red layui-btn-xs" lay-event="del">删除</button>
+					</div>`;
 					}}
 			]],
 			done: function(res, curr, count) {
@@ -138,6 +360,34 @@
 				let realCount = count || (res.data ? res.data.length : 0);
 				state.total = realCount;
 				state.page = curr || 1;
+
+				// ========== 核心修改：按新规则设置行样式 ==========
+				if (res.data && res.data.length > 0) {
+					// 先清空所有行的自定义类名，避免叠加
+					$('#table_project_tender').next().find('.layui-table-body tbody tr').removeClass('table-row-tender-yes-win table-row-tender-yes-lose table-row-tender-no');
+
+					// 遍历表格行，根据条件添加背景色类名
+					$('#table_project_tender').next().find('.layui-table-body tbody tr').each(function(index) {
+						var rowData = res.data[index];
+						var $tr = $(this);
+
+						// 规则1：是否投标=是
+						if (rowData.is_tender_submitted === '是') {
+							// 子规则1：中标=是 → 红色背景
+							if (rowData.bid_result === '中标') {
+								$tr.addClass('table-row-tender-yes-win');
+							}
+							// 子规则2：未中标/待开标 → 无背景色
+							else {
+								$tr.addClass('table-row-tender-yes-lose');
+							}
+						}
+						// 规则2：是否投标=否 → 绿色背景+红色字体
+						else if (rowData.is_tender_submitted === '否') {
+							$tr.addClass('table-row-tender-no');
+						}
+					});
+				}
 
 				// 渲染外部分页
 				renderExternalPage();
@@ -187,7 +437,7 @@
 			});
 		}
 
-		// 搜索事件
+		// 搜索事件（适配新增的筛选条件）
 		form.on('submit(doSearch)', function(data) {
 			state.where = data.field;
 			tableIns.reload({
@@ -197,12 +447,16 @@
 			return false;
 		});
 
-		// 重置事件
+		// 重置事件（清空新增的筛选条件）
 		form.on('submit(resetSearch)', function() {
 			form.val('searchForm', {
 				project_name: '',
 				tender_leader: '',
-				tender_agency: ''
+				tender_agency: '',
+				bid_opening_date_start: '', // 清空开标开始日期
+				bid_opening_date_end: '',   // 清空开标结束日期
+				is_tender_submitted: '',    // 清空是否投标
+				bid_result: ''              // 清空中标结果
 			});
 			state.where = {};
 			tableIns.reload({

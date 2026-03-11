@@ -1,0 +1,175 @@
+{extend name="../../base/view/common/base" /}
+
+{block name="body"}
+<div class="p-page">
+	<div class="layui-card">
+		<!-- 标题自适应：新增/编辑 -->
+		<div class="layui-card-header">{:isset($detail['id']) && $detail['id'] ? '招投标网址信息编辑' : '新增招投标网址信息'}</div>
+		<div class="layui-card-body">
+			<!-- 核心表单：移除所有下拉框，仅保留输入框/文本域 -->
+			<form id="websiteForm" class="layui-form layui-form-pane" lay-filter="websiteForm" autocomplete="off">
+				<!-- 隐藏域 -->
+				<input type="hidden" name="id" value="{$detail.id|default=0}">
+
+				<!-- 表单表格：4列布局，与参考模板一致 -->
+				<table class="layui-table layui-table-borderless" style="width: 100%;">
+					<colgroup>
+						<col width="150">
+						<col width="300">
+						<col width="150">
+						<col width="300">
+					</colgroup>
+					<tbody>
+					<tr>
+						<td class="layui-td-gray">网站名称<span style="color: red;">*</span></td>
+						<td>
+							<input type="text" name="website_name" lay-verify="required"
+								   placeholder="请输入网站名称" class="layui-input"
+								   value="{$detail.website_name|default=''}" autocomplete="off">
+						</td>
+						<td class="layui-td-gray">网址<span style="color: red;">*</span></td>
+						<td>
+							<input type="text" name="website_url" lay-verify="required"
+								   placeholder="请输入完整网址（含http/https）" class="layui-input"
+								   value="{$detail.website_url|default=''}" autocomplete="off">
+						</td>
+					</tr>
+					<tr>
+						<td class="layui-td-gray">排序</td>
+						<td>
+							<input type="number" name="sort" placeholder="数字越小越靠前，默认0"
+								   class="layui-input" value="{$detail.sort|default=0}" autocomplete="off">
+						</td>
+						<td class="layui-td-gray">用户名<span style="color: red;">*</span></td>
+						<td>
+							<input type="text" name="username" lay-verify="required"
+								   placeholder="请输入登录用户名" class="layui-input"
+								   value="{$detail.username|default=''}" autocomplete="off">
+						</td>
+					</tr>
+					<tr>
+						<td class="layui-td-gray">密码<span style="color: red;">*</span></td>
+						<td>
+							<input type="text" name="password" lay-verify="required"
+								   placeholder="请输入登录密码" class="layui-input"
+								   value="{$detail.password|default=''}" autocomplete="off">
+						</td>
+						<td class="layui-td-gray">是否有UK</td>
+						<td>
+							<!-- 修复单选按钮：使用更安全的if判断，避免Undefined变量报错 -->
+							<input type="radio" name="has_uk" value="已购" title="已购"
+								   {if condition="isset($detail['has_uk']) && $detail['has_uk'] == '已购'"}checked{/if}>
+							<input type="radio" name="has_uk" value="无" title="无"
+								   {if condition="isset($detail['has_uk']) && $detail['has_uk'] == '无'"}checked{/if}>
+							<input type="radio" name="has_uk" value="" title="未设置"
+								   {if condition="!isset($detail['has_uk']) || $detail['has_uk'] == ''"}checked{/if}>
+						</td>
+					</tr>
+					<tr>
+						<!-- 说明：跨4列 -->
+						<td class="layui-td-gray">说明</td>
+						<td colspan="3">
+							<textarea name="remark" rows="3" placeholder="请输入备注说明（选填）"
+									  class="layui-textarea" autocomplete="off">{$detail.remark|default=''}</textarea>
+						</td>
+					</tr>
+					</tbody>
+				</table>
+
+				<!-- 提交/取消按钮组：与参考模板一致 -->
+				<div class="layui-form-item">
+					<div class="layui-input-block">
+						<button type="button" id="submitBtn" class="layui-btn layui-btn-success">
+							{:isset($detail['id']) && $detail['id'] ? '更新' : '提交'}
+						</button>
+						<button type="button" onclick="closeSide()" class="layui-btn layui-btn-default" style="margin-left: 10px;">取消</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+{/block}
+
+{block name="script"}
+<script>
+	// 核心关闭方法：复用参考模板的可靠逻辑
+	function closeSide() {
+		if (parent.layui && parent.layui.tool && typeof parent.layui.tool.closeSide === 'function') {
+			parent.layui.tool.closeSide();
+		} else if (parent.layer && typeof parent.layer.closeAll === 'function') {
+			parent.layer.closeAll();
+		} else {
+			let index = parent.layer.getFrameIndex(window.name);
+			if (index !== false) {
+				parent.layer.close(index);
+			}
+		}
+	}
+
+	// 模块初始化：仅加载核心依赖
+	const moduleInit = ['form'];
+	function gouguInit() {
+		layui.use(['form', 'layer'], function(){
+			var form = layui.form, layer = layui.layer;
+
+			// 强制渲染表单，确保单选按钮样式正常
+			form.render();
+
+			// 提交按钮点击事件（核心修复：改用AJAX提交，与参考模板逻辑一致）
+			$('#submitBtn').click(function() {
+				// 1. 前端必填项校验
+				let requiredFields = {
+					'website_name': '网站名称',
+					'website_url': '网址',
+					'username': '用户名',
+					'password': '密码'
+				};
+				for (let field in requiredFields) {
+					let val = $('input[name="' + field + '"]').val().trim();
+					if (!val) {
+						layer.msg('请填写必填项：' + requiredFields[field], {icon: 2});
+						return;
+					}
+				}
+
+				// 2. 组装表单数据
+				let formData = $('#websiteForm').serialize();
+				let submitBtn = $(this);
+				submitBtn.attr('disabled', true).text('提交中...');
+
+				// 3. AJAX提交（与参考模板一致的请求方式）
+				$.ajax({
+					url: "/projecttender/websiteaccount/add",
+					type: 'POST',
+					data: formData,
+					dataType: 'json',
+					success: function(res) {
+						if (res.code === 0) {
+							layer.msg(res.msg, {icon: 1});
+							setTimeout(function(){
+								// 刷新父页面表格（精准匹配datalist的pageTable）
+								if (parent.layui && parent.layui.pageTable) {
+									parent.layui.pageTable.reload();
+								}
+								// 关闭侧边弹窗
+								closeSide();
+							}, 1000);
+						} else {
+							layer.msg(res.msg, {icon: 2});
+							submitBtn.attr('disabled', false).text(submitBtn.data('original-text') || '提交');
+						}
+					},
+					error: function(xhr, status, error) {
+						layer.msg('提交请求失败：' + error, {icon: 2});
+						submitBtn.attr('disabled', false).text(submitBtn.data('original-text') || '提交');
+					}
+				});
+			});
+
+			// 初始化按钮原始文本
+			$('#submitBtn').data('original-text', $('#submitBtn').text());
+		});
+	}
+</script>
+{/block}
