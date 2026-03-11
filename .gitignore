@@ -1,0 +1,49 @@
+# 依赖目录（Composer）
+/vendor/
+
+# 环境配置文件（可能包含敏感信息，如数据库密码）
+.env
+.env.local
+.env.*.local
+
+# 应用缓存和日志（常见于 Laravel、Symfony 等框架）
+/storage/
+/storage/*.log
+/var/
+/var/*.log
+/bootstrap/cache/*.php
+
+# 上传的文件（如果不希望包含用户上传的测试文件）
+/public/uploads/
+/public/storage/
+
+# 前端构建产物（npm/yarn 编译后的资源）
+/node_modules/
+/public/build/
+/public/mix-manifest.json
+/public/hot
+
+# IDE 配置文件（不同编辑器）
+.idea/
+.vscode/
+*.sublime-*
+.project
+.classpath
+
+# 操作系统生成的文件
+.DS_Store
+Thumbs.db
+
+# Composer 锁文件（是否提交有争议，建议提交以锁定依赖版本）
+# composer.lock
+
+# PHPUnit 缓存
+.phpunit.result.cache
+
+# 测试覆盖率报告
+/coverage/
+
+# 临时文件
+*.tmp
+*.log
+*.cache

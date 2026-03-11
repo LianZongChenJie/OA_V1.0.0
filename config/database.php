@@ -16,15 +16,15 @@ return [
             // 数据库类型
             'type'               =>  'mysql',
             // 服务器地址
-            'hostname'           =>  'localhost',
+            'hostname'           =>  '211.149.169.81',
             // 数据库名
-            'database'           =>  'oa',
+            'database'           =>  'oa2_0_dev',
             // 用户名
-            'username'           =>  'root',
+            'username'           =>  'oa2_dev_user',
             // 密码
-            'password'           =>  '123456',
+            'password'           =>  'Bjlz@20260302!@#',
             // 端口
-            'hostport'           =>  '3306',
+            'hostport'           =>  '3307',
             // 数据库表前缀
             'prefix'             =>  'oa_',
             // 数据库连接参数
