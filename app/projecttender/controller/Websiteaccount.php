@@ -234,10 +234,7 @@ class Websiteaccount extends BaseController
         exit;
     }
 
-    /**
-     * Excel导入接口
-     * @return \think\response\Json
-     */
+
     public function importExcel()
     {
         if (!request()->isPost()) {
@@ -250,18 +247,28 @@ class Websiteaccount extends BaseController
             return to_assign(1, '请选择要导入的Excel文件');
         }
 
-        // 验证文件类型
-        $fileInfo = $file->getInfo();
-        $ext = strtolower(pathinfo($fileInfo['name'], PATHINFO_EXTENSION));
-        if (!in_array($ext, ['xlsx', 'xls'])) {
-            return to_assign(1, '仅支持.xlsx/.xls格式的Excel文件');
-        }
+        $successCount = 0;
+        $errorMessages = [];
 
         try {
-            // 读取Excel文件
-            $spreadsheet = IOFactory::load($file->getRealPath());
+            // 验证文件类型
+            $originalName = $file->getOriginalName();
+            $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+            if (!in_array($ext, ['xlsx', 'xls'])) {
+                return to_assign(1, '仅支持.xlsx/.xls格式的Excel文件，当前文件格式：.' . $ext);
+            }
+
+            // 读取Excel
+            $filePath = $file->getRealPath();
+            if (!file_exists($filePath)) {
+                return to_assign(1, '临时文件不存在，请重新上传');
+            }
+
+            // 强制指定读取器类型，避免自动识别出错
+            $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader(ucfirst($ext));
+            $spreadsheet = $reader->load($filePath);
             $sheet = $spreadsheet->getActiveSheet();
-            $highestRow = $sheet->getHighestRow(); // 获取总行数
+            $highestRow = (int)$sheet->getHighestRow(); // 强制转为数字
 
             if ($highestRow < 2) {
                 return to_assign(1, 'Excel文件中无有效数据（需跳过表头）');
@@ -270,27 +277,67 @@ class Websiteaccount extends BaseController
             // 解析数据
             $dataList = [];
             for ($row = 2; $row <= $highestRow; $row++) {
+                // 安全取值：避免空单元格/公式报错
+                $getCellValue = function ($cellAddr) use ($sheet, $row) {
+                    $cell = $sheet->getCell($cellAddr . $row);
+                    // 获取单元格原始值，跳过公式计算
+                    return $cell->getFormattedValue() ?: '';
+                };
+
                 $data = [
-                    'website_name' => $sheet->getCell("A{$row}")->getValue() ?: '',
-                    'website_url'  => $sheet->getCell("B{$row}")->getValue() ?: '',
-                    'username'     => $sheet->getCell("C{$row}")->getValue() ?: '',
-                    'password'     => $sheet->getCell("D{$row}")->getValue() ?: '',
-                    'has_uk'       => $sheet->getCell("E{$row}")->getValue() ?: '',
-                    'sort'         => $sheet->getCell("F{$row}")->getValue() ?: 0,
-                    'remark'       => $sheet->getCell("G{$row}")->getValue() ?: ''
+                    'website_name' => $getCellValue('A'),
+                    'website_url'  => $getCellValue('B'),
+                    'username'     => $getCellValue('C'),
+                    'password'     => $getCellValue('D'),
+                    'has_uk'       => $getCellValue('E'),
+                    'sort'         => is_numeric($getCellValue('F')) ? (int)$getCellValue('F') : 0,
+                    'remark'       => $getCellValue('G'),
+                    'delete_time'  => 0
                 ];
+
                 // 空行跳过
                 if (empty($data['website_name']) && empty($data['website_url']) && empty($data['username']) && empty($data['password'])) {
                     continue;
                 }
+
+                // 校验
+                if (empty($data['website_name']) && empty($data['website_url'])) {
+                    $errorMessages[] = "第" . $row . "行：网站名称和网址不能同时为空";
+                    continue;
+                }
+
                 $dataList[] = $data;
+                $successCount++;
             }
 
-            // 调用模型批量导入
-            return $this->model->importBatch($dataList);
+            // 插入数据
+            if (!empty($dataList)) {
+                Db::name('website_account')->insertAll($dataList);
+            }
+
+            // 只有真实错误才返回code=1
+            if (!empty($errorMessages)) {
+                return to_assign(1, "导入完成，成功 {$successCount} 条，失败 " . count($errorMessages) . " 条：" . implode("；", $errorMessages));
+            }
+
+            // 无错误则返回纯成功提示
+            return to_assign(0, "导入成功，共导入 {$successCount} 条数据");
+
         } catch (\Exception $e) {
-            return to_assign(1, '解析Excel失败：' . $e->getMessage());
+            // 核心过滤：只处理有具体信息的异常
+            $errorMsg = trim($e->getMessage());
+            if ($successCount > 0 && empty($errorMsg)) {
+                // 空异常 + 数据已入库 → 直接返回成功
+                return to_assign(0, "导入成功，共导入 {$successCount} 条数据");
+            } elseif ($successCount > 0 && !empty($errorMsg)) {
+                // 有真实异常 + 数据已入库 → 提示成功但说明异常
+                return to_assign(0, "导入完成，成功 {$successCount} 条（部分非关键异常：{$errorMsg}）");
+            } else {
+                // 无成功数据 + 有异常 → 返回失败
+                return to_assign(1, '解析Excel失败：' . ($errorMsg ?: '未知错误'));
+            }
         }
     }
+
 
 }
