@@ -323,9 +323,10 @@
 				{field:'has_tender_invoice', width:120, title: '标书款发票', align:'center', templet: d => {
 						return d.has_tender_invoice ? (d.has_tender_invoice == '是' ? '<span style="color:#52c41a;">是</span>' : '<span style="color:#f5222d;">否</span>') : '-';
 					}},
-				{field:'is_deposit_paid', width:120, title: '是否缴纳保证金', align:'center', templet: d => {
+				{field:'is_deposit_paid', width:100, title: '是否缴纳保证金', align:'center', templet: d => {
 						return d.is_deposit_paid ? (d.is_deposit_paid == '是' ? '<span style="color:#52c41a;">是</span>' : '<span style="color:#f5222d;">否</span>') : '-';
 					}},
+				{field:'deposit_paid_time', width:200, title: '保证金缴纳截止日期', align:'center', templet: d => d.deposit_paid_time || '-'},
 				{field:'tender_deposit', width:150, title: '投标保证金（元）', align:'right', templet: d => `¥${d.tender_deposit ? parseFloat(d.tender_deposit).toFixed(2) : '0.00'}`},
 				{field:'deposit_account_name', width:150, title: '保证金账户名'},
 				{field:'deposit_bank', width:150, title: '保证金开户行'},

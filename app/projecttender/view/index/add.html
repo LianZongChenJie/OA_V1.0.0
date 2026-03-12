@@ -135,7 +135,7 @@
                         </td>
                     </tr>
                     <tr>
-                        <td class="layui-td-gray">保证金缴纳日期</td>
+                        <td class="layui-td-gray">保证金缴纳截止日期</td>
                         <td>
                             <input type="text" name="deposit_paid_time" id="depositPaidTimePicker" lay-verify="" class="layui-input" value="{:isset($info['id']) ? $info['deposit_paid_time'] : ''}" autocomplete="off">
                         </td>
@@ -287,7 +287,7 @@
                 trigger: 'click'
             });
 
-            // 初始化保证金缴纳日期选择器（日期时间）
+            // 初始化保证金缴纳截止日期选择器（日期时间）
             laydate.render({
                 elem: '#depositPaidTimePicker',
                 type: 'datetime',
@@ -296,7 +296,7 @@
                 trigger: 'click'
             });
 
-            // 是否缴纳保证金变化时，动态设置保证金缴纳日期的必填属性
+            // 是否缴纳保证金变化时，动态设置保证金缴纳截止日期的必填属性
             form.on('select(isDepositPaid)', function(data) {
                 var $depositPaidTime = $('#depositPaidTimePicker');
                 if (data.value === '是') {
@@ -513,12 +513,12 @@
                     }
                 }
 
-                // 2. 校验是否缴纳保证金与保证金缴纳日期的关系
+                // 2. 校验是否缴纳保证金与保证金缴纳截止日期的关系
                 let isDepositPaid = $('#isDepositPaid').val();
                 if (isDepositPaid === '是') {
                     let depositPaidTime = $('#depositPaidTimePicker').val().trim();
                     if (!depositPaidTime) {
-                        layer.msg('缴纳保证金时，保证金缴纳日期为必填项', {icon: 2});
+                        layer.msg('缴纳保证金时，保证金缴纳截止日期为必填项', {icon: 2});
                         return;
                     }
                 }
