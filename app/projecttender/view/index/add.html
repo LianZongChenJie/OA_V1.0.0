@@ -99,7 +99,7 @@
                     <tr>
                         <td class="layui-td-gray">是否缴纳保证金</td>
                         <td>
-                            <select name="is_deposit_paid" class="layui-select">
+                            <select name="is_deposit_paid" id="isDepositPaid" class="layui-select">
                                 <option value="">请选择</option>
                                 <option value="是" {:isset($info['id']) && $info['is_deposit_paid'] == '是' ? 'selected' : ''}>是</option>
                                 <option value="否" {:isset($info['id']) && $info['is_deposit_paid'] == '否' ? 'selected' : ''}>否</option>
@@ -135,6 +135,12 @@
                         </td>
                     </tr>
                     <tr>
+                        <td class="layui-td-gray">保证金缴纳日期</td>
+                        <td>
+                            <input type="text" name="deposit_paid_time" id="depositPaidTimePicker" lay-verify="" class="layui-input" value="{:isset($info['id']) ? $info['deposit_paid_time'] : ''}" autocomplete="off">
+                        </td>
+                    </tr>
+                    <tr>
                         <td class="layui-td-gray">中标结果</td>
                         <td>
                             <select name="bid_result" class="layui-select">
@@ -149,6 +155,7 @@
                             <input type="text" name="bid_service_fee" placeholder="请输入中标服务费" class="layui-input" value="{:isset($info['id']) ? $info['bid_service_fee'] : '0.00'}" autocomplete="off">
                         </td>
                     </tr>
+
                     <!--<tr>
                         <td class="layui-td-gray">序列</td>
                         <td>
@@ -278,6 +285,34 @@
                 format: 'yyyy-MM',
                 value: "{:isset($info['id']) ? $info['month'] : ''}",
                 trigger: 'click'
+            });
+
+            // 初始化保证金缴纳日期选择器（日期时间）
+            laydate.render({
+                elem: '#depositPaidTimePicker',
+                type: 'datetime',
+                format: 'yyyy-MM-dd HH:mm:ss',
+                value: "{:isset($info['id']) && $info['deposit_paid_time'] ? $info['deposit_paid_time'] : ''}",
+                trigger: 'click'
+            });
+
+            // 是否缴纳保证金变化时，动态设置保证金缴纳日期的必填属性
+            form.on('select(isDepositPaid)', function(data) {
+                var $depositPaidTime = $('#depositPaidTimePicker');
+                if (data.value === '是') {
+                    $depositPaidTime.attr('lay-verify', 'required');
+                } else {
+                    $depositPaidTime.attr('lay-verify', '');
+                }
+                form.render('select');
+            });
+
+            // 页面加载时检查是否缴纳保证金的初始值
+            $(function() {
+                var initialDepositPaid = "{:isset($info['id']) ? $info['is_deposit_paid'] : ''}";
+                if (initialDepositPaid === '是') {
+                    $('#depositPaidTimePicker').attr('lay-verify', 'required');
+                }
             });
 
             // 初始化已有附件的文件大小显示
@@ -474,6 +509,16 @@
 
                     if (!val) {
                         layer.msg('请填写必填项：' + fieldNames[field], {icon: 2});
+                        return;
+                    }
+                }
+
+                // 2. 校验是否缴纳保证金与保证金缴纳日期的关系
+                let isDepositPaid = $('#isDepositPaid').val();
+                if (isDepositPaid === '是') {
+                    let depositPaidTime = $('#depositPaidTimePicker').val().trim();
+                    if (!depositPaidTime) {
+                        layer.msg('缴纳保证金时，保证金缴纳日期为必填项', {icon: 2});
                         return;
                     }
                 }

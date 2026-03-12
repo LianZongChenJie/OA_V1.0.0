@@ -249,7 +249,27 @@ class Index extends BaseController
 		if(!empty($dids)){
 			$mapContractOr[] =['did', 'in', $dids];
 		}
-		
+
+        $todue[] = array(
+            'name' => '快到期的开标时间',
+            'num' =>  Db::name('project_tender')
+        ->whereTime('bid_opening_date', '>=', '-72 hours')
+        ->whereTime('bid_opening_date', '>', date("Y-m-d H:i:s"))
+        ->count(),
+            'id' => 414,
+            'url' => '/projecttender/index/datalist',
+        );
+
+        $todue[] = array(
+            'name' => '快到期的保证金缴纳',
+            'num' =>  Db::name('project_tender')
+                ->whereTime('deposit_paid_time', '>=', '-72 hours')
+                ->whereTime('deposit_paid_time', '>', date("Y-m-d H:i:s"))
+                ->count(),
+            'id' => 414,
+            'url' => '/projecttender/index/datalist',
+        );
+
         $todue[] = array(
             'name' => '快到期的销售合同',
             'num' =>  Db::name('Contract')->where($mapContract)

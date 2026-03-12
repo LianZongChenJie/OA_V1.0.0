@@ -120,6 +120,7 @@ class Index extends BaseController
                 'shortlisted_countries' => '',
                 'budget_amount' => '0.00',
                 'bid_opening_date' => '',
+                'deposit_paid_time'=>'',
                 'is_tender_submitted' => '',
                 'non_tender_reason' => '',
                 'tender_document_fee' => '0.00',
@@ -159,6 +160,7 @@ class Index extends BaseController
                 $info['shortlisted_countries'] = $info['shortlisted_countries'] ?? '';
                 $info['budget_amount'] = $info['budget_amount'] ?? '0.00';
                 $info['bid_opening_date'] = $info['bid_opening_date'] ?? '';
+                $info['deposit_paid_time'] = $info['deposit_paid_time'] ?? '';
                 $info['is_tender_submitted'] = $info['is_tender_submitted'] ?? '';
                 $info['non_tender_reason'] = $info['non_tender_reason'] ?? '';
                 $info['tender_document_fee'] = $info['tender_document_fee'] ?? '0.00';
@@ -181,7 +183,7 @@ class Index extends BaseController
                     'delete_time' => 0 // 关键修正：和软删除配置一致
                 ])->order('sort asc')->select()->toArray();
             }
-
+//            dd($info);
             // 赋值模板变量
             View::assign([
                 'id' => $id,
@@ -255,6 +257,7 @@ class Index extends BaseController
                 return '<div style="padding: 20px; background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; border-radius: 4px;">数据不存在</div>';
             }
             $info = $info->toArray();
+
             $info['budget_amount'] = $info['budget_amount'] ?? '0.00';
             $info['tender_document_fee'] = $info['tender_document_fee'] ?? '0.00';
             $info['tender_deposit'] = $info['tender_deposit'] ?? '0.00';
@@ -510,7 +513,7 @@ class Index extends BaseController
                 'bid_result' => 'string',
                 'budget_amount' => 'float', 'tender_document_fee' => 'float', 'tender_deposit' => 'float',
                 'bid_service_fee' => 'float', 'sort' => 'int',
-                'purchase_date' => 'date', 'bid_opening_date' => 'date',
+                'purchase_date' => 'date', 'bid_opening_date' => 'date','deposit_paid_time'=>'date',
                 'is_tender_submitted' => 'enum', 'has_tender_invoice' => 'enum',
                 'is_deposit_paid' => 'enum', 'is_deposit_refunded' => 'enum',
             ];
