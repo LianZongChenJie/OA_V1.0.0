@@ -55,8 +55,8 @@ class Index extends BaseController
             }
             $bidOpeningDateEnd = trim(Request::param('bid_opening_date_end', ''));
             if (!empty($bidOpeningDateEnd)) {
-                // 结束日期加一天，确保包含当天的数据
-                $searchWhere[] = ['bid_opening_date', '<=', date('Y-m-d', strtotime($bidOpeningDateEnd . ' +1 day'))];
+                // 兼容日期时间格式：匹配到结束日期的 23:59:59
+                $searchWhere[] = ['bid_opening_date', '<=', date('Y-m-d 23:59:59', strtotime($bidOpeningDateEnd))];
             }
 
             // 新增筛选条件2：是否投标
@@ -71,13 +71,18 @@ class Index extends BaseController
                 $searchWhere[] = ['bid_result', '=', $bidResult];
             }
 
+            // 新增：获取排序类型（默认正序asc）
+            $sortType = trim(Request::param('sort_type', 'asc'));
+            // 安全校验：只允许asc/desc两种值
+            $sortType = in_array($sortType, ['asc', 'desc']) ? $sortType : 'asc';
+
             // 【终极修复1】每次查询都新建模型实例，彻底隔离上下文
             // 1. 列表数据
             $listModel = new \app\projecttender\model\ProjectTender();
             $list = $listModel
                 ->where($searchWhere)
                 ->limit($offset, $limit)
-                ->order('bid_opening_date asc')
+                ->order('bid_opening_date ' . $sortType) // 使用前端传递的排序类型
                 ->select()
                 ->toArray();
 
