@@ -251,20 +251,20 @@ class Index extends BaseController
 		}
 
         $todue[] = array(
-            'name' => '快到期的开标时间',
-            'num' =>  Db::name('project_tender')
-        ->whereTime('bid_opening_date', '>=', '-72 hours')
-        ->whereTime('bid_opening_date', '>', date("Y-m-d H:i:s"))
-        ->count(),
-            'id' => 414,
-            'url' => '/projecttender/index/datalist',
-        );
+			'name' => '快到期的开标时间',
+			'num' =>  Db::name('project_tender')
+				->whereTime('bid_opening_date', '>', date("Y-m-d H:i:s"))
+				->whereTime('bid_opening_date', '<=', date("Y-m-d H:i:s", strtotime("+72 hours")))
+				->count(),
+			'id' => 414,
+			'url' => '/projecttender/index/datalist',
+		);
 
         $todue[] = array(
             'name' => '快到期的保证金缴纳',
             'num' =>  Db::name('project_tender')
-                ->whereTime('deposit_paid_time', '>=', '-72 hours')
-                ->whereTime('deposit_paid_time', '>', date("Y-m-d H:i:s"))
+				->whereTime('deposit_paid_time', '>', date("Y-m-d H:i:s"))
+				->whereTime('deposit_paid_time', '<=', date("Y-m-d H:i:s", strtotime("+72 hours")))
                 ->count(),
             'id' => 414,
             'url' => '/projecttender/index/datalist',
