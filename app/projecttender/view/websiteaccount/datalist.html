@@ -82,9 +82,35 @@
 			where: {
 				website_url: $('input[name="website_url"]').val() // 初始化搜索参数
 			},
+			// 解析数据时动态计算分页连续序号
+			parseData: function(res) {
+				if (res.code === 0 && res.data) {
+					// 关键：从表格实例中获取当前分页参数（避免全局缓存）
+					var currPage = this.page.curr || 1; // 当前页码
+					var pageSize = this.page.limit || 10; // 每页条数
+					var startNum = (currPage - 1) * pageSize; // 当前页起始序号
+
+					// 给每行添加连续序号
+					for (var i = 0; i < res.data.length; i++) {
+						res.data[i].serial_number = startNum + i + 1;
+					}
+				}
+				return {
+					code: res.code,
+					msg: res.msg,
+					count: res.count,
+					data: res.data
+				};
+			},
 			cols: [[
-				{field: 'id', width: 80, title: 'ID号', align: 'center', fixed: 'left'},
-				{field: 'sort', width: 80, title: '排序', align: 'center'},
+				// 分页连续序号列
+				{
+					width: 80,
+					title: '序号',
+					align: 'center',
+					fixed: 'left',
+					field: 'serial_number' // 直接读取计算好的连续序号
+				},
 				{field: 'website_name', minWidth: 200, title: '网站名称'},
 				{field: 'website_url', minWidth: 300, title: '网址', templet: function(d) {
 						// 网址渲染为可点击链接，兼容空值
